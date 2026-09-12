@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="QR Code Generator — Create, customize, and manage static and dynamic QR codes." />
+  <title>QR Code Generator</title>
+  <link rel="icon" type="image/png" href="icon.png" />
+  <link rel="apple-touch-icon" href="icon.png" />
+  <link rel="stylesheet" href="styles.css" />
+  <!-- QR Code Library -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <!-- Supabase JS SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <!-- Toast Notification -->
+  <div id="toast" class="toast" role="alert" aria-live="polite"></div>
+
+  <!-- Header -->
+  <header class="header">
+    <div class="header__inner container">
+      <div class="header__brand">
+        <svg class="header__logo" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+          <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+          <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+          <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="2"/>
+          <rect x="14" y="14" width="3" height="3" fill="currentColor"/>
+          <rect x="19" y="14" width="2" height="2" fill="currentColor"/>
+          <rect x="14" y="19" width="2" height="2" fill="currentColor"/>
+          <rect x="18" y="18" width="3" height="3" fill="currentColor"/>
+        </svg>
+        <span class="header__title">QR Generator</span>
+      </div>
+      <div class="header__auth">
+        <!-- Logged out state -->
+        <div id="auth-logged-out" class="auth-section">
+          <button id="btn-login" class="btn btn--outline btn--sm" aria-label="Login with magic link">
+            Login
+          </button>
+        </div>
+        <!-- Logged in state -->
+        <div id="auth-logged-in" class="auth-section hidden">
+          <span id="auth-user-email" class="auth-email"></span>
+          <button id="btn-logout" class="btn btn--ghost btn--sm" aria-label="Logout">
+            Logout
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Login Modal -->
+  <div id="login-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal__backdrop" id="modal-backdrop"></div>
+    <div class="modal__content">
+      <button class="modal__close" id="modal-close" aria-label="Close modal">&times;</button>
+      <h2 id="modal-title" class="modal__title">Sign In</h2>
+      <p class="modal__subtitle">Enter your email to receive a magic link.</p>
+      <form id="login-form" class="login-form" novalidate>
+        <div class="form-group">
+          <label for="login-email" class="form-label">Email Address</label>
+          <input
+            type="email"
+            id="login-email"
+            class="form-input"
+            placeholder="you@example.com"
+            autocomplete="email"
+            required
+          />
+        </div>
+        <button type="submit" id="btn-send-magic" class="btn btn--primary btn--full">
+          <span class="btn__text">Send Magic Link</span>
+          <span class="btn__spinner spinner spinner--sm hidden"></span>
+        </button>
+      </form>
+      <div id="login-success" class="login-success hidden">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2"/><path d="M8 12l3 3 5-5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        <p>Check your email for the magic link!</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main App -->
+  <main class="main container">
+
+    <!-- Backend Status Notice -->
+    <div id="backend-notice" class="notice notice--warning hidden" role="status">
+      <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      Backend unavailable — running in static mode. Dynamic QR features disabled.
+    </div>
+
+    <!-- Two-column layout wrapper -->
+    <div class="app-layout">
+
+      <!-- LEFT COLUMN: Controls -->
+      <div class="controls-panel">
+
+        <!-- Section: Static QR Generator -->
+        <section class="card" aria-labelledby="static-section-title">
+          <h2 id="static-section-title" class="card__title">QR Code Generator</h2>
+          <p class="card__subtitle">No login required — generate static QR codes instantly.</p>
+
+          <!-- Input Type Tabs -->
+          <div class="tabs" role="tablist" aria-label="Input type">
+            <button class="tab tab--active" role="tab" aria-selected="true" data-type="url" id="tab-url">URL</button>
+            <button class="tab" role="tab" aria-selected="false" data-type="text" id="tab-text">Text</button>
+            <button class="tab" role="tab" aria-selected="false" data-type="email" id="tab-email">Email</button>
+            <button class="tab" role="tab" aria-selected="false" data-type="phone" id="tab-phone">Phone</button>
+          </div>
+
+          <!-- Input Fields -->
+          <div class="form-group mt-3">
+            <div id="input-url" class="input-variant">
+              <label for="qr-input-url" class="form-label">Website URL</label>
+              <input type="url" id="qr-input-url" class="form-input" placeholder="https://example.com" maxlength="2000" autocomplete="url" />
+            </div>
+            <div id="input-text" class="input-variant hidden">
+              <label for="qr-input-text" class="form-label">Text Content</label>
+              <textarea id="qr-input-text" class="form-input form-textarea" placeholder="Enter any text..." maxlength="2000" rows="3"></textarea>
+            </div>
+            <div id="input-email" class="input-variant hidden">
+              <label for="qr-input-email" class="form-label">Email Address</label>
+              <input type="email" id="qr-input-email" class="form-input" placeholder="contact@example.com" maxlength="2000" autocomplete="email" />
+            </div>
+            <div id="input-phone" class="input-variant hidden">
+              <label for="qr-input-phone" class="form-label">Phone Number</label>
+              <input type="tel" id="qr-input-phone" class="form-input" placeholder="+1234567890" maxlength="20" autocomplete="tel" />
+            </div>
+            <div class="char-counter">
+              <span id="char-count">0</span> / <span id="char-max">2000</span> characters
+            </div>
+          </div>
+
+          <!-- Customization Panel -->
+          <div class="customization-panel">
+            <h3 class="customization-panel__title">Customization</h3>
+
+            <div class="custom-grid">
+              <div class="form-group">
+                <label for="fg-color" class="form-label">Foreground</label>
+                <div class="color-input-wrap">
+                  <input type="color" id="fg-color" class="color-input" value="#000000" />
+                  <span class="color-hex" id="fg-hex">#000000</span>
+                </div>
+              </div>
+              <div class="form-group">
+                <label for="bg-color" class="form-label">Background</label>
+                <div class="color-input-wrap">
+                  <input type="color" id="bg-color" class="color-input" value="#ffffff" />
+                  <span class="color-hex" id="bg-hex">#ffffff</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="padding-slider" class="form-label">
+                Padding: <span id="padding-value">10</span>px
+              </label>
+              <input type="range" id="padding-slider" class="range-input" min="0" max="50" value="10" step="1" />
+            </div>
+
+            <div class="form-group">
+              <label for="logo-upload" class="form-label">Logo Overlay (optional)</label>
+              <div class="file-upload-wrap">
+                <input type="file" id="logo-upload" class="file-input" accept="image/*" />
+                <label for="logo-upload" class="file-upload-label">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span id="logo-filename">Choose image…</span>
+                </label>
+                <button id="btn-clear-logo" class="btn btn--ghost btn--sm hidden" aria-label="Remove logo">Remove</button>
+              </div>
+            </div>
+
+            <div class="form-group">
+              <label for="qr-size" class="form-label">
+                Size: <span id="size-value">300</span>px
+              </label>
+              <input type="range" id="qr-size" class="range-input" min="128" max="512" value="300" step="8" />
+            </div>
+
+            <div class="form-group">
+              <label for="error-correction" class="form-label">Error Correction</label>
+              <select id="error-correction" class="form-select">
+                <option value="L">Low (7%)</option>
+                <option value="M" selected>Medium (15%)</option>
+                <option value="Q">Quartile (25%)</option>
+                <option value="H">High (30%) — recommended with logo</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Download Buttons -->
+          <div class="download-actions">
+            <button id="btn-download-png" class="btn btn--primary" disabled>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Download PNG
+            </button>
+            <button id="btn-download-svg" class="btn btn--outline" disabled>
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Download SVG
+            </button>
+          </div>
+        </section>
+
+        <!-- Section: Dynamic QR (Auth Required) -->
+        <section id="dynamic-section" class="card hidden" aria-labelledby="dynamic-section-title">
+          <h2 id="dynamic-section-title" class="card__title">Dynamic QR Codes</h2>
+          <p class="card__subtitle">Save QR codes and update their destination URL anytime — the printed QR stays the same.</p>
+
+          <button id="btn-save-qr" class="btn btn--primary btn--full">
+            <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M19 21H5a2 2 0 01-2-2V5a2 2 0 012-2h11l5 5v11a2 2 0 01-2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="17 21 17 13 7 13 7 21" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><polyline points="7 3 7 8 15 8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <span class="btn__text">Save as Dynamic QR</span>
+            <span class="btn__spinner spinner spinner--sm hidden"></span>
+          </button>
+
+          <!-- Saved QR List -->
+          <div class="saved-qr-section">
+            <div class="saved-qr-header">
+              <h3 class="saved-qr-title">Your Saved QR Codes</h3>
+              <button id="btn-refresh-qr" class="btn btn--ghost btn--sm" aria-label="Refresh list">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><polyline points="23 4 23 10 17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/><path d="M20.49 15a9 9 0 11-2.12-9.36L23 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Refresh
+              </button>
+            </div>
+            <div id="saved-qr-list" class="saved-qr-list">
+              <div class="empty-state">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                <p>No saved QR codes yet.</p>
+              </div>
+            </div>
+            <div id="saved-qr-loading" class="loading-state hidden">
+              <div class="spinner"></div>
+              <span>Loading your QR codes…</span>
+            </div>
+          </div>
+        </section>
+
+      </div><!-- end controls-panel -->
+
+      <!-- RIGHT COLUMN: QR Preview -->
+      <div class="preview-panel">
+        <div class="preview-card">
+          <h2 class="preview-card__title">Live Preview</h2>
+          <div class="preview-area">
+            <div id="qr-loading" class="qr-loading hidden">
+              <div class="spinner spinner--lg"></div>
+            </div>
+            <div id="qr-placeholder" class="qr-placeholder" aria-label="QR code will appear here">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true">
+                <rect x="3" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="14" y="3" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="3" y="14" width="7" height="7" rx="1" stroke="currentColor" stroke-width="1.5"/>
+                <rect x="5" y="5" width="3" height="3" fill="currentColor"/>
+                <rect x="16" y="5" width="3" height="3" fill="currentColor"/>
+                <rect x="5" y="16" width="3" height="3" fill="currentColor"/>
+                <rect x="16" y="16" width="2" height="2" fill="currentColor"/>
+                <rect x="19" y="16" width="2" height="2" fill="currentColor"/>
+                <rect x="16" y="19" width="2" height="2" fill="currentColor"/>
+                <rect x="19" y="19" width="2" height="2" fill="currentColor"/>
+              </svg>
+              <p>Enter content to generate QR</p>
+            </div>
+            <div id="qr-output" class="qr-output hidden" aria-label="Generated QR code"></div>
+            <div id="qr-canvas-container" class="qr-canvas-container hidden">
+              <canvas id="qr-final-canvas" aria-label="QR code with customizations"></canvas>
+            </div>
+          </div>
+
+          <!-- Dynamic QR short URL display -->
+          <div id="short-url-display" class="short-url-display hidden">
+            <span class="short-url-label">Short URL:</span>
+            <a id="short-url-link" href="#" target="_blank" rel="noopener" class="short-url-link"></a>
+            <button id="btn-copy-url" class="btn btn--ghost btn--sm" aria-label="Copy short URL">
+              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="9" y="9" width="13" height="13" rx="2" ry="2" stroke="currentColor" stroke-width="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+              Copy
+            </button>
+          </div>
+        </div>
+      </div><!-- end preview-panel -->
+
+    </div><!-- end app-layout -->
+
+  </main>
+
+  <!-- Edit Dynamic QR Modal -->
+  <div id="edit-modal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="edit-modal-title">
+    <div class="modal__backdrop" id="edit-modal-backdrop"></div>
+    <div class="modal__content">
+      <button class="modal__close" id="edit-modal-close" aria-label="Close modal">&times;</button>
+      <h2 id="edit-modal-title" class="modal__title">Edit Destination URL</h2>
+      <p class="modal__subtitle">Update where this QR code points to. The printed QR code remains unchanged.</p>
+      <form id="edit-form" class="login-form" novalidate>
+        <input type="hidden" id="edit-qr-id" />
+        <div class="form-group">
+          <label for="edit-qr-data" class="form-label">Destination URL / Content</label>
+          <input type="text" id="edit-qr-data" class="form-input" placeholder="https://new-destination.com" maxlength="2000" required />
+        </div>
+        <div class="edit-modal-actions">
+          <button type="button" id="btn-edit-cancel" class="btn btn--outline">Cancel</button>
+          <button type="submit" id="btn-edit-save" class="btn btn--primary">
+            <span class="btn__text">Save Changes</span>
+            <span class="btn__spinner spinner spinner--sm hidden"></span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <footer class="footer">
+    <div class="container">
+      <p>QR Code Generator &mdash; Static mode always available. Dynamic features require login.</p>
+    </div>
+  </footer>
+
+  <script>
+    // ── Config (replace with your actual values) ──────────────────────────────
+    const SUPABASE_URL = 'https://qsietardmnwpxlklxqts.supabase.co'
+    const SUPABASE_ANON_KEY = 'sb_publishable_b6I9L5mg1cgSI0V702nbZQ_dpgMT_8j'
+    const WORKER_URL = 'https://qr-code-generator-api.andisis409.workers.dev'
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
