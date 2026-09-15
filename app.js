@@ -139,18 +139,19 @@ const FRAMES = [
     label: 'None',
     hasLabel: false,
     extraPad: { top: 0, right: 0, bottom: 0, left: 0 },
-    draw: () => {},  // no-op
+    draw: () => {},
   },
   {
     id: 'simple',
     label: 'Simple',
     hasLabel: false,
     extraPad: { top: 8, right: 8, bottom: 8, left: 8 },
-    draw(ctx, total, color) {
+    draw(ctx, totalW, color, _label, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 16;
       const bw = 4;
       ctx.strokeStyle = color;
       ctx.lineWidth   = bw;
-      ctx.strokeRect(bw / 2, bw / 2, total - bw, total - bw);
+      ctx.strokeRect(bw / 2, bw / 2, totalW - bw, totalH - bw);
     },
   },
   {
@@ -158,12 +159,13 @@ const FRAMES = [
     label: 'Rounded',
     hasLabel: false,
     extraPad: { top: 10, right: 10, bottom: 10, left: 10 },
-    draw(ctx, total, color) {
+    draw(ctx, totalW, color, _label, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 20;
       const bw = 4, r = 18;
       ctx.strokeStyle = color;
       ctx.lineWidth   = bw;
       ctx.beginPath();
-      ctx.roundRect(bw / 2, bw / 2, total - bw, total - bw, r);
+      ctx.roundRect(bw / 2, bw / 2, totalW - bw, totalH - bw, r);
       ctx.stroke();
     },
   },
@@ -172,14 +174,13 @@ const FRAMES = [
     label: 'Double',
     hasLabel: false,
     extraPad: { top: 12, right: 12, bottom: 12, left: 12 },
-    draw(ctx, total, color) {
-      // Outer border
+    draw(ctx, totalW, color, _label, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 24;
       ctx.strokeStyle = color;
       ctx.lineWidth = 3;
-      ctx.strokeRect(3, 3, total - 6, total - 6);
-      // Inner border
+      ctx.strokeRect(3, 3, totalW - 6, totalH - 6);
       ctx.lineWidth = 1.5;
-      ctx.strokeRect(8, 8, total - 16, total - 16);
+      ctx.strokeRect(8, 8, totalW - 16, totalH - 16);
     },
   },
   {
@@ -187,11 +188,12 @@ const FRAMES = [
     label: 'Dotted',
     hasLabel: false,
     extraPad: { top: 10, right: 10, bottom: 10, left: 10 },
-    draw(ctx, total, color) {
+    draw(ctx, totalW, color, _label, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 20;
       ctx.strokeStyle = color;
       ctx.lineWidth   = 3;
       ctx.setLineDash([6, 5]);
-      ctx.strokeRect(4, 4, total - 8, total - 8);
+      ctx.strokeRect(4, 4, totalW - 8, totalH - 8);
       ctx.setLineDash([]);
     },
   },
@@ -200,21 +202,18 @@ const FRAMES = [
     label: 'Corners',
     hasLabel: false,
     extraPad: { top: 10, right: 10, bottom: 10, left: 10 },
-    draw(ctx, total, color) {
+    draw(ctx, totalW, color, _label, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 20;
       const len = 28, bw = 4;
       ctx.strokeStyle = color;
       ctx.lineWidth   = bw;
       ctx.lineCap     = 'square';
       const off = bw / 2;
       const corners = [
-        // top-left
-        [[off, off + len], [off, off], [off + len, off]],
-        // top-right
-        [[total - off - len, off], [total - off, off], [total - off, off + len]],
-        // bottom-left
-        [[off, total - off - len], [off, total - off], [off + len, total - off]],
-        // bottom-right
-        [[total - off - len, total - off], [total - off, total - off], [total - off, total - off - len]],
+        [[off, off + len],           [off, off],           [off + len, off]],
+        [[totalW-off-len, off],       [totalW-off, off],    [totalW-off, off+len]],
+        [[off, totalH-off-len],       [off, totalH-off],    [off+len, totalH-off]],
+        [[totalW-off-len, totalH-off],[totalW-off,totalH-off],[totalW-off,totalH-off-len]],
       ];
       corners.forEach(([a, b, c]) => {
         ctx.beginPath();
@@ -230,17 +229,15 @@ const FRAMES = [
     label: 'Shadow',
     hasLabel: false,
     extraPad: { top: 8, right: 12, bottom: 12, left: 8 },
-    draw(ctx, total, color) {
-      // Shadow layer
-      ctx.fillStyle = color + '55'; // semi-transparent
-      ctx.fillRect(6, 6, total - 6, total - 6);
-      // White card over it
+    draw(ctx, totalW, color, _label, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 20;
+      ctx.fillStyle = color + '55';
+      ctx.fillRect(6, 6, totalW - 6, totalH - 6);
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, total - 6, total - 6);
-      // Thin border
+      ctx.fillRect(0, 0, totalW - 6, totalH - 6);
       ctx.strokeStyle = color;
       ctx.lineWidth   = 1.5;
-      ctx.strokeRect(0.75, 0.75, total - 6 - 1.5, total - 6 - 1.5);
+      ctx.strokeRect(0.75, 0.75, totalW - 6 - 1.5, totalH - 6 - 1.5);
     },
   },
   {
@@ -248,34 +245,32 @@ const FRAMES = [
     label: 'Scan Me',
     hasLabel: true,
     extraPad: { top: 8, right: 8, bottom: 44, left: 8 },
-    draw(ctx, total, color, labelText) {
+    draw(ctx, totalW, color, labelText, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 8 + 44;
       const bh = 40, r = 12, bw = 3;
-      // Outer rounded rect
       ctx.strokeStyle = color;
       ctx.lineWidth   = bw;
       ctx.beginPath();
-      ctx.roundRect(bw / 2, bw / 2, total - bw, total - bw, r);
+      ctx.roundRect(bw/2, bw/2, totalW-bw, totalH-bw, r);
       ctx.stroke();
-      // Banner fill at bottom
-      const bannerY = total - bh - bw / 2;
+      const bannerY = totalH - bh - bw/2;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.moveTo(bw / 2, bannerY);
-      ctx.lineTo(total - bw / 2, bannerY);
-      ctx.lineTo(total - bw / 2, total - r - bw / 2);
-      ctx.arcTo(total - bw / 2, total - bw / 2, total - r - bw / 2, total - bw / 2, r);
-      ctx.lineTo(r + bw / 2, total - bw / 2);
-      ctx.arcTo(bw / 2, total - bw / 2, bw / 2, total - r - bw / 2, r);
-      ctx.lineTo(bw / 2, bannerY);
+      ctx.moveTo(bw/2, bannerY);
+      ctx.lineTo(totalW-bw/2, bannerY);
+      ctx.lineTo(totalW-bw/2, totalH-r-bw/2);
+      ctx.arcTo(totalW-bw/2, totalH-bw/2, totalW-r-bw/2, totalH-bw/2, r);
+      ctx.lineTo(r+bw/2, totalH-bw/2);
+      ctx.arcTo(bw/2, totalH-bw/2, bw/2, totalH-r-bw/2, r);
+      ctx.lineTo(bw/2, bannerY);
       ctx.closePath();
       ctx.fill();
-      // Label text
       const text = labelText || 'SCAN ME';
       ctx.fillStyle    = '#ffffff';
       ctx.font         = `bold ${Math.round(bh * 0.45)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(text, total / 2, bannerY + bh / 2);
+      ctx.fillText(text, totalW/2, bannerY + bh/2);
     },
   },
   {
@@ -283,31 +278,30 @@ const FRAMES = [
     label: 'Top Banner',
     hasLabel: true,
     extraPad: { top: 44, right: 8, bottom: 8, left: 8 },
-    draw(ctx, total, color, labelText) {
+    draw(ctx, totalW, color, labelText, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 44 + 8;
       const bh = 40, r = 12, bw = 3;
       ctx.strokeStyle = color;
       ctx.lineWidth   = bw;
       ctx.beginPath();
-      ctx.roundRect(bw / 2, bw / 2, total - bw, total - bw, r);
+      ctx.roundRect(bw/2, bw/2, totalW-bw, totalH-bw, r);
       ctx.stroke();
-      // Banner fill at top
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.moveTo(r + bw / 2, bw / 2);
-      ctx.arcTo(total - bw / 2, bw / 2, total - bw / 2, r + bw / 2, r);
-      ctx.lineTo(total - bw / 2, bh + bw / 2);
-      ctx.lineTo(bw / 2, bh + bw / 2);
-      ctx.lineTo(bw / 2, r + bw / 2);
-      ctx.arcTo(bw / 2, bw / 2, r + bw / 2, bw / 2, r);
+      ctx.moveTo(r+bw/2, bw/2);
+      ctx.arcTo(totalW-bw/2, bw/2, totalW-bw/2, r+bw/2, r);
+      ctx.lineTo(totalW-bw/2, bh+bw/2);
+      ctx.lineTo(bw/2, bh+bw/2);
+      ctx.lineTo(bw/2, r+bw/2);
+      ctx.arcTo(bw/2, bw/2, r+bw/2, bw/2, r);
       ctx.closePath();
       ctx.fill();
-      // Label text
       const text = labelText || 'SCAN ME';
       ctx.fillStyle    = '#ffffff';
       ctx.font         = `bold ${Math.round(bh * 0.45)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(text, total / 2, bw / 2 + bh / 2);
+      ctx.fillText(text, totalW/2, bw/2 + bh/2);
     },
   },
   {
@@ -315,22 +309,22 @@ const FRAMES = [
     label: 'Phone',
     hasLabel: false,
     extraPad: { top: 36, right: 14, bottom: 52, left: 14 },
-    draw(ctx, total, color) {
+    draw(ctx, totalW, color, _label, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 36 + 52;
       const bw = 3, r = 22;
-      // Phone body
       ctx.strokeStyle = color;
       ctx.lineWidth   = bw;
       ctx.beginPath();
-      ctx.roundRect(bw / 2, bw / 2, total - bw, total - bw, r);
+      ctx.roundRect(bw/2, bw/2, totalW-bw, totalH-bw, r);
       ctx.stroke();
-      // Top speaker
-      const spW = total * 0.25, spH = 5, spX = (total - spW) / 2, spY = 14;
+      // Top speaker bar
+      const spW = totalW * 0.25, spH = 5, spX = (totalW-spW)/2, spY = 14;
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.roundRect(spX, spY, spW, spH, 3);
       ctx.fill();
-      // Bottom home button circle
-      const btnR = 10, btnX = total / 2, btnY = total - 26;
+      // Bottom home button
+      const btnR = 10, btnX = totalW/2, btnY = totalH - 26;
       ctx.beginPath();
       ctx.arc(btnX, btnY, btnR, 0, Math.PI * 2);
       ctx.stroke();
@@ -341,32 +335,29 @@ const FRAMES = [
     label: 'Price Tag',
     hasLabel: true,
     extraPad: { top: 20, right: 8, bottom: 48, left: 8 },
-    draw(ctx, total, color, labelText) {
+    draw(ctx, totalW, color, labelText, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 20 + 48;
       const bw = 3, r = 10;
-      // Outer border
       ctx.strokeStyle = color;
       ctx.lineWidth   = bw;
       ctx.beginPath();
-      ctx.roundRect(bw / 2, bw / 2, total - bw, total - bw, r);
+      ctx.roundRect(bw/2, bw/2, totalW-bw, totalH-bw, r);
       ctx.stroke();
       // Hole at top
-      const holeR = 8, holeX = total / 2, holeY = 14;
-      ctx.strokeStyle = color;
-      ctx.lineWidth   = bw;
+      const holeR = 8, holeX = totalW/2, holeY = 14;
       ctx.beginPath();
       ctx.arc(holeX, holeY, holeR, 0, Math.PI * 2);
       ctx.stroke();
       // Bottom strip
-      const stripH = 36, stripY = total - stripH - bw / 2;
+      const stripH = 36, stripY = totalH - stripH - bw/2;
       ctx.fillStyle = color;
-      ctx.fillRect(bw, stripY, total - bw * 2, stripH);
-      // Text
+      ctx.fillRect(bw, stripY, totalW-bw*2, stripH);
       const text = labelText || 'Scan & Shop';
       ctx.fillStyle    = '#ffffff';
       ctx.font         = `bold ${Math.round(stripH * 0.42)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillText(text, total / 2, stripY + stripH / 2);
+      ctx.fillText(text, totalW/2, stripY + stripH/2);
     },
   },
   {
@@ -374,28 +365,27 @@ const FRAMES = [
     label: 'Heart',
     hasLabel: false,
     extraPad: { top: 10, right: 10, bottom: 10, left: 10 },
-    draw(ctx, total, color) {
+    draw(ctx, totalW, color, _label, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 20;
       ctx.strokeStyle = color;
       ctx.lineWidth   = 3;
-      // Ornamental corner hearts (small, using unicode-like path)
-      const drawHeart = (cx, cy, size) => {
+      const drawHeart = (cx, cy, sz) => {
         ctx.save();
         ctx.translate(cx, cy);
         ctx.beginPath();
-        ctx.moveTo(0, size * 0.3);
-        ctx.bezierCurveTo(-size, -size * 0.3, -size * 2, size * 0.6, 0, size * 1.3);
-        ctx.bezierCurveTo(size * 2, size * 0.6, size, -size * 0.3, 0, size * 0.3);
+        ctx.moveTo(0, sz * 0.3);
+        ctx.bezierCurveTo(-sz, -sz * 0.3, -sz * 2, sz * 0.6, 0, sz * 1.3);
+        ctx.bezierCurveTo(sz * 2, sz * 0.6, sz, -sz * 0.3, 0, sz * 0.3);
         ctx.fillStyle = color;
         ctx.fill();
         ctx.restore();
       };
       const s = 8;
-      drawHeart(s * 1.5, s * 1.5, s);
-      drawHeart(total - s * 1.5, s * 1.5, s);
-      drawHeart(s * 1.5, total - s * 1.5, s);
-      drawHeart(total - s * 1.5, total - s * 1.5, s);
-      // Simple border
-      ctx.strokeRect(3, 3, total - 6, total - 6);
+      drawHeart(s*1.5, s*1.5, s);
+      drawHeart(totalW-s*1.5, s*1.5, s);
+      drawHeart(s*1.5, totalH-s*1.5, s);
+      drawHeart(totalW-s*1.5, totalH-s*1.5, s);
+      ctx.strokeRect(3, 3, totalW-6, totalH-6);
     },
   },
   {
@@ -403,12 +393,11 @@ const FRAMES = [
     label: 'Floral',
     hasLabel: false,
     extraPad: { top: 14, right: 14, bottom: 14, left: 14 },
-    draw(ctx, total, color) {
-      // Decorative border with petal ornaments at corners
+    draw(ctx, totalW, color, _label, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 28;
       ctx.strokeStyle = color;
       ctx.lineWidth   = 2;
-      ctx.strokeRect(6, 6, total - 12, total - 12);
-      // Draw simple petal at each corner
+      ctx.strokeRect(6, 6, totalW-12, totalH-12);
       const drawPetal = (x, y) => {
         ctx.fillStyle = color;
         for (let i = 0; i < 4; i++) {
@@ -420,7 +409,6 @@ const FRAMES = [
           ctx.fill();
           ctx.restore();
         }
-        // center dot
         ctx.beginPath();
         ctx.arc(x, y, 3, 0, Math.PI * 2);
         ctx.fillStyle = color;
@@ -428,9 +416,9 @@ const FRAMES = [
       };
       const margin = 10;
       drawPetal(margin, margin);
-      drawPetal(total - margin, margin);
-      drawPetal(margin, total - margin);
-      drawPetal(total - margin, total - margin);
+      drawPetal(totalW-margin, margin);
+      drawPetal(margin, totalH-margin);
+      drawPetal(totalW-margin, totalH-margin);
     },
   },
 
@@ -2049,7 +2037,7 @@ function applyCanvasEffects() {
     ctx.fillRect(0, 0, totalW - 6, totalH - 6);
   }
 
-  // Landscape/Portrait: draw frame background FIRST, then place QR on top
+  // Landscape/Portrait: draw frame background FIRST, then QR on top
   if (isSpecialFrame) {
     frame.draw(ctx, totalW, frameColor, labelText, size, padding);
   }
