@@ -19,6 +19,8 @@ const state = {
   debounceTimer:   null,
   lastQrData:      '',     // last successfully generated QR data
   selectedFrame:   'none', // active frame id
+  selectedBody:    'square', // active body shape id
+  qrMatrix:        null,   // raw bit matrix from QR generation
 };
 
 // ── DOM Refs ─────────────────────────────────────────────────
@@ -100,6 +102,8 @@ const dom = {
   frameColorHex:      $('frame-color-hex'),
   frameLabel:         $('frame-label'),
   frameLabelGroup:    $('frame-label-group'),
+  // Body shape
+  bodyPicker:         $('body-picker'),
 };
 
 // ── Frame Definitions ─────────────────────────────────────────
@@ -529,6 +533,337 @@ function getActiveFrame() {
   return FRAMES.find((f) => f.id === state.selectedFrame) || FRAMES[0];
 }
 
+// ── Body Shape Definitions ────────────────────────────────────
+/**
+ * Each body shape defines how individual QR modules are drawn.
+ * draw(ctx, x, y, size, color, neighbors)
+ *   x, y    – top-left of the module cell
+ *   size    – pixel size of the cell
+ *   color   – fill color
+ *   n       – neighbor map { top, right, bottom, left, tl, tr, bl, br } (boolean)
+ */
+const BODY_SHAPES = [
+  {
+    id: 'square',
+    label: 'Square',
+    draw(ctx, x, y, s, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, s, s);
+    },
+  },
+  {
+    id: 'rounded',
+    label: 'Rounded',
+    draw(ctx, x, y, s, color, n) {
+      const r = s * 0.35;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      // round corners only where there's no neighbor
+      const tl = n.top || n.left   ? 0 : r;
+      const tr = n.top || n.right  ? 0 : r;
+      const br = n.bottom || n.right  ? 0 : r;
+      const bl = n.bottom || n.left   ? 0 : r;
+      ctx.roundRect(x, y, s, s, [tl, tr, br, bl]);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'circle',
+    label: 'Circle',
+    draw(ctx, x, y, s, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x + s / 2, y + s / 2, s * 0.44, 0, Math.PI * 2);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'dot',
+    label: 'Dot',
+    draw(ctx, x, y, s, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x + s / 2, y + s / 2, s * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'diamond',
+    label: 'Diamond',
+    draw(ctx, x, y, s, color) {
+      const cx = x + s / 2, cy = y + s / 2, h = s * 0.46;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(cx,      cy - h);
+      ctx.lineTo(cx + h,  cy);
+      ctx.lineTo(cx,      cy + h);
+      ctx.lineTo(cx - h,  cy);
+      ctx.closePath();
+      ctx.fill();
+    },
+  },
+  {
+    id: 'star',
+    label: 'Star',
+    draw(ctx, x, y, s, color) {
+      const cx = x + s / 2, cy = y + s / 2;
+      const outer = s * 0.44, inner = s * 0.20;
+      const pts = 5;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      for (let i = 0; i < pts * 2; i++) {
+        const angle = (i * Math.PI) / pts - Math.PI / 2;
+        const r2 = i % 2 === 0 ? outer : inner;
+        i === 0
+          ? ctx.moveTo(cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle))
+          : ctx.lineTo(cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle));
+      }
+      ctx.closePath();
+      ctx.fill();
+    },
+  },
+  {
+    id: 'cross',
+    label: 'Cross',
+    draw(ctx, x, y, s, color) {
+      const t = s * 0.28, o = s * 0.18;
+      ctx.fillStyle = color;
+      // horizontal bar
+      ctx.fillRect(x, y + o, s, t);
+      // vertical bar
+      ctx.fillRect(x + o, y, t, s);
+    },
+  },
+  {
+    id: 'vertical',
+    label: 'Vertical',
+    draw(ctx, x, y, s, color, n) {
+      ctx.fillStyle = color;
+      const r = s * 0.4;
+      const tl = n.top  ? 0 : r;
+      const bl = n.bottom ? 0 : r;
+      ctx.beginPath();
+      ctx.roundRect(x + s * 0.18, y, s * 0.64, s, [tl, tl, bl, bl]);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'horizontal',
+    label: 'Horizontal',
+    draw(ctx, x, y, s, color, n) {
+      ctx.fillStyle = color;
+      const r = s * 0.4;
+      const tl = n.left  ? 0 : r;
+      const tr = n.right ? 0 : r;
+      ctx.beginPath();
+      ctx.roundRect(x, y + s * 0.18, s, s * 0.64, [tl, tr, tr, tl]);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'leaf',
+    label: 'Leaf',
+    draw(ctx, x, y, s, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x + s / 2, y);
+      ctx.quadraticCurveTo(x + s, y,      x + s, y + s / 2);
+      ctx.quadraticCurveTo(x + s, y + s,  x + s / 2, y + s);
+      ctx.quadraticCurveTo(x,     y + s,  x, y + s / 2);
+      ctx.quadraticCurveTo(x,     y,      x + s / 2, y);
+      ctx.closePath();
+      ctx.fill();
+    },
+  },
+  {
+    id: 'triangle',
+    label: 'Triangle',
+    draw(ctx, x, y, s, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x + s / 2, y + s * 0.08);
+      ctx.lineTo(x + s * 0.92, y + s * 0.92);
+      ctx.lineTo(x + s * 0.08, y + s * 0.92);
+      ctx.closePath();
+      ctx.fill();
+    },
+  },
+  {
+    id: 'mosaic',
+    label: 'Mosaic',
+    draw(ctx, x, y, s, color) {
+      // Split into 4 tiny squares with gap
+      const g = s * 0.12, hs = (s - g * 3) / 2;
+      ctx.fillStyle = color;
+      [[0,0],[1,0],[0,1],[1,1]].forEach(([ci, ri]) => {
+        ctx.fillRect(x + g + ci * (hs + g), y + g + ri * (hs + g), hs, hs);
+      });
+    },
+  },
+];
+
+// ── Body Picker UI ────────────────────────────────────────────
+function buildBodyThumb(shape) {
+  const size = 48;
+  const canvas = document.createElement('canvas');
+  canvas.width  = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, size, size);
+
+  // Draw a small 5×5 QR-like pattern using the shape
+  const cols = 5, cell = Math.floor((size * 0.78) / cols);
+  const offsetX = Math.floor((size - cols * cell) / 2);
+  const offsetY = offsetX;
+
+  // Simple pattern: 1 = dark, 0 = light
+  const pattern = [
+    [1,1,1,0,1],
+    [1,0,1,1,0],
+    [0,1,1,0,1],
+    [1,0,0,1,1],
+    [1,1,0,1,0],
+  ];
+
+  const noNeighbor = { top:false, right:false, bottom:false, left:false };
+
+  for (let r = 0; r < cols; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (!pattern[r][c]) continue;
+      const n = {
+        top:    r > 0        && pattern[r-1][c],
+        bottom: r < cols-1   && pattern[r+1][c],
+        left:   c > 0        && pattern[r][c-1],
+        right:  c < cols-1   && pattern[r][c+1],
+      };
+      shape.draw(ctx, offsetX + c * cell, offsetY + r * cell, cell, '#0f172a', n);
+    }
+  }
+
+  const img = document.createElement('img');
+  img.src = canvas.toDataURL();
+  img.width  = size;
+  img.height = size;
+  img.alt = '';
+  return img;
+}
+
+function renderBodyPicker() {
+  const container = dom.bodyPicker;
+  if (!container) return;
+  container.innerHTML = '';
+
+  BODY_SHAPES.forEach((shape) => {
+    const btn = document.createElement('button');
+    btn.type  = 'button';
+    btn.className = `frame-option${state.selectedBody === shape.id ? ' selected' : ''}`;
+    btn.dataset.body = shape.id;
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', state.selectedBody === shape.id ? 'true' : 'false');
+    btn.setAttribute('aria-label', shape.label);
+
+    const preview = document.createElement('div');
+    preview.className = 'frame-option__preview';
+    preview.appendChild(buildBodyThumb(shape));
+
+    const label = document.createElement('span');
+    label.className   = 'frame-option__label';
+    label.textContent = shape.label;
+
+    btn.appendChild(preview);
+    btn.appendChild(label);
+    container.appendChild(btn);
+  });
+}
+
+function selectBody(shapeId) {
+  state.selectedBody = shapeId;
+  dom.bodyPicker.querySelectorAll('.frame-option').forEach((btn) => {
+    const active = btn.dataset.body === shapeId;
+    btn.classList.toggle('selected', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+  if (state.lastQrData) generateQR();
+}
+
+// ── QR Bit Matrix Extractor ───────────────────────────────────
+/**
+ * Extract the raw boolean matrix from qrcodejs.
+ * Returns a 2D boolean array (true = dark module) or null on failure.
+ */
+function extractQrMatrix(qrInstance) {
+  try {
+    // qrcodejs stores the module data in _oQRCode.modules
+    const modules = qrInstance._oQRCode?.modules;
+    if (modules && Array.isArray(modules)) return modules;
+    // Fallback: read from the rendered canvas pixel data
+    const canvas = dom.qrOutput.querySelector('canvas');
+    if (!canvas) return null;
+    const size = canvas.width;
+    const ctx2  = canvas.getContext('2d');
+    const imgData = ctx2.getImageData(0, 0, size, size);
+    // Determine module count from qrInstance
+    const count = qrInstance._oQRCode?.moduleCount || Math.round(Math.sqrt(size));
+    const cell  = size / count;
+    const mat   = [];
+    for (let r = 0; r < count; r++) {
+      mat[r] = [];
+      for (let c = 0; c < count; c++) {
+        const px = Math.round((r + 0.5) * cell);
+        const py = Math.round((c + 0.5) * cell);
+        const idx = (px * size + py) * 4;
+        mat[r][c] = imgData.data[idx] < 128;
+      }
+    }
+    return mat;
+  } catch (e) {
+    console.warn('[QR] matrix extraction failed', e);
+    return null;
+  }
+}
+
+// ── Custom QR Canvas Renderer ─────────────────────────────────
+/**
+ * Render QR modules using the selected body shape onto a canvas.
+ * Returns an offscreen canvas with just the QR (no frame/padding).
+ */
+function renderQrWithShape(matrix, size, fgColor, bgColor) {
+  const count  = matrix.length;
+  const cell   = size / count;
+  const canvas = document.createElement('canvas');
+  canvas.width  = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // Background
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(0, 0, size, size);
+
+  const shape = BODY_SHAPES.find((s) => s.id === state.selectedBody) || BODY_SHAPES[0];
+
+  for (let r = 0; r < count; r++) {
+    for (let c = 0; c < count; c++) {
+      if (!matrix[r][c]) continue;
+      const x = c * cell;
+      const y = r * cell;
+      const n = {
+        top:    r > 0       && matrix[r-1][c],
+        bottom: r < count-1 && matrix[r+1][c],
+        left:   c > 0       && matrix[r][c-1],
+        right:  c < count-1 && matrix[r][c+1],
+        tl:     r > 0       && c > 0       && matrix[r-1][c-1],
+        tr:     r > 0       && c < count-1 && matrix[r-1][c+1],
+        bl:     r < count-1 && c > 0       && matrix[r+1][c-1],
+        br:     r < count-1 && c < count-1 && matrix[r+1][c+1],
+      };
+      shape.draw(ctx, x, y, cell, fgColor, n);
+    }
+  }
+
+  return canvas;
+}
 
 let toastTimeout = null;
 function showToast(message, type = '', duration = 3500) {
@@ -649,9 +984,11 @@ function generateQR() {
     const config = getQrConfig();
     state.qrInstance = new QRCode(dom.qrOutput, { text: data, ...config });
 
-    // Give qrcode.js a tick to render, then apply canvas effects
+    // Give qrcode.js a tick to render, then extract matrix + apply effects
     requestAnimationFrame(() => {
       setTimeout(() => {
+        // Extract bit matrix for custom body shape rendering
+        state.qrMatrix = extractQrMatrix(state.qrInstance);
         applyCanvasEffects();
         showQrLoading(false);
         dom.btnDownloadPng.disabled = false;
@@ -680,18 +1017,27 @@ function showQrLoading(show) {
   dom.qrLoading.classList.toggle('hidden', !show);
 }
 
-// ── Canvas Effects (logo, padding, color, frame) ─────────────
+// ── Canvas Effects (logo, padding, color, body shape, frame) ──
 function applyCanvasEffects() {
-  // Get the canvas rendered by qrcode.js
-  const sourceCanvas = dom.qrOutput.querySelector('canvas');
-  if (!sourceCanvas) return;
-
-  const padding   = parseInt(dom.paddingSlider.value, 10);
-  const size      = parseInt(dom.qrSize.value, 10);
-  const frame     = getActiveFrame();
-  const ep        = frame.extraPad;
+  const padding    = parseInt(dom.paddingSlider.value, 10);
+  const size       = parseInt(dom.qrSize.value, 10);
+  const frame      = getActiveFrame();
+  const ep         = frame.extraPad;
   const frameColor = dom.frameColor?.value || '#6366f1';
   const labelText  = dom.frameLabel?.value.trim() || '';
+  const fgColor    = dom.fgColor.value;
+  const bgColor    = dom.bgColor.value;
+
+  // Build the QR layer — prefer custom shape renderer if matrix available
+  let qrLayer = null;
+  if (state.qrMatrix && state.selectedBody !== 'square') {
+    qrLayer = renderQrWithShape(state.qrMatrix, size, fgColor, bgColor);
+  } else {
+    // Fallback: use qrcode.js canvas directly
+    const sourceCanvas = dom.qrOutput.querySelector('canvas');
+    if (!sourceCanvas) return;
+    qrLayer = sourceCanvas;
+  }
 
   // Total canvas size includes user padding + frame extra padding
   const totalW = size + padding * 2 + ep.left + ep.right;
@@ -703,22 +1049,20 @@ function applyCanvasEffects() {
   const ctx = canvas.getContext('2d');
 
   // Background fill
-  ctx.fillStyle = dom.bgColor.value;
+  ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, totalW, totalH);
 
-  // For shadow frame, we need to redraw bg after shadow layer
+  // Shadow frame needs to draw bg card after shadow layer
   if (frame.id === 'shadow') {
-    // Draw shadow first, then bg card, then QR
-    frame.draw(ctx, totalW < totalH ? totalW : totalH, frameColor, labelText, size, padding);
-    ctx.fillStyle = dom.bgColor.value;
-    const adj = 6; // matches shadow offset in frame def
-    ctx.fillRect(0, 0, totalW - adj, totalH - adj);
+    frame.draw(ctx, totalW, frameColor, labelText, size, padding);
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, totalW - 6, totalH - 6);
   }
 
-  // Draw QR
+  // Draw QR layer
   const qrX = padding + ep.left;
   const qrY = padding + ep.top;
-  ctx.drawImage(sourceCanvas, qrX, qrY, size, size);
+  ctx.drawImage(qrLayer, qrX, qrY, size, size);
 
   // Logo overlay
   if (state.logoImage) {
@@ -727,7 +1071,7 @@ function applyCanvasEffects() {
     const logoY    = qrY + Math.round((size - logoSize) / 2);
 
     const pad = 4;
-    ctx.fillStyle = dom.bgColor.value;
+    ctx.fillStyle = bgColor;
     ctx.beginPath();
     if (ctx.roundRect) {
       ctx.roundRect(logoX - pad, logoY - pad, logoSize + pad * 2, logoSize + pad * 2, 6);
@@ -740,7 +1084,6 @@ function applyCanvasEffects() {
 
   // Draw frame on top (except shadow which was drawn first)
   if (frame.id !== 'none' && frame.id !== 'shadow') {
-    const total = Math.max(totalW, totalH);
     frame.draw(ctx, totalW, frameColor, labelText, size, padding);
   }
 
@@ -1245,6 +1588,14 @@ function bindEvents() {
     if (btn) selectFrame(btn.dataset.frame);
   });
 
+  // Body shape picker — event delegation
+  if (dom.bodyPicker) {
+    dom.bodyPicker.addEventListener('click', (e) => {
+      const btn = e.target.closest('.frame-option');
+      if (btn && btn.dataset.body) selectBody(btn.dataset.body);
+    });
+  }
+
   // Frame color
   if (dom.frameColor) {
     dom.frameColor.addEventListener('input', () => {
@@ -1264,12 +1615,11 @@ function bindEvents() {
 // ── Init ──────────────────────────────────────────────────────
 function init() {
   renderFramePicker();
+  renderBodyPicker();
   bindEvents();
   initSupabase();
   updateCharCounter();
 
-  // Trigger generation with default placeholder so preview shows on load
-  // (only if an input already has a value — e.g. when navigating back)
   const initialVal = getRawInputValue();
   if (initialVal) generateQR();
 }
