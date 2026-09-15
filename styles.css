@@ -769,8 +769,9 @@ button, input, select, textarea {
 
 .qr-canvas-container {
   border-radius: var(--radius-md);
-  overflow: hidden;
+  overflow: auto;
   box-shadow: var(--shadow-lg);
+  max-width: 100%;
 }
 
 .qr-canvas-container canvas {
@@ -1201,6 +1202,16 @@ button, input, select, textarea {
   gap: var(--space-2);
 }
 
+/* Landscape frames span 2 columns in the grid */
+.frame-option--landscape {
+  grid-column: span 2;
+}
+
+/* Portrait frames look taller */
+.frame-option--portrait .frame-option__preview {
+  height: 72px;
+}
+
 .frame-option {
   display: flex;
   flex-direction: column;
@@ -1231,6 +1242,17 @@ button, input, select, textarea {
   width: 48px;
   height: 48px;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+/* Landscape frame thumbnails are wider */
+.frame-option__preview svg[width="82"],
+.frame-option__preview svg[width="81"] {
+  max-width: 82px;
+  height: auto;
 }
 
 .frame-option__label {
