@@ -442,7 +442,7 @@ const FRAMES = [
     hasLabel: true,
     extraPad: { top: 52, right: 6, bottom: 6, left: 6 },
     draw(ctx, totalW, color, labelText, qrSize, outerPad) {
-      const totalH = totalW; // square canvas
+      const totalH = qrSize + outerPad * 2 + 52 + 6;
       const bw = 4, r = 16;
       // Outer rounded rect border (double line)
       ctx.strokeStyle = color;
@@ -476,7 +476,7 @@ const FRAMES = [
     hasLabel: true,
     extraPad: { top: 14, right: 14, bottom: 56, left: 14 },
     draw(ctx, totalW, color, labelText, qrSize, outerPad) {
-      const totalH = totalW;
+      const totalH = qrSize + outerPad * 2 + 14 + 56;
       const len = 32, bw = 4;
       // Corner brackets only
       ctx.strokeStyle = color;
@@ -527,8 +527,8 @@ const FRAMES = [
     label: 'Dashed Banner',
     hasLabel: true,
     extraPad: { top: 52, right: 6, bottom: 6, left: 6 },
-    draw(ctx, totalW, color, labelText) {
-      const totalH = totalW;
+    draw(ctx, totalW, color, labelText, qrSize, outerPad) {
+      const totalH = qrSize + outerPad * 2 + 52 + 6;
       const bw = 3, r = 14;
       // Dashed outer border
       ctx.strokeStyle = color;
