@@ -113,6 +113,14 @@ const dom = {
   extEyeColorHex:     $('ext-eye-color-hex'),
   intEyeColor:        $('int-eye-color'),
   intEyeColorHex:     $('int-eye-color-hex'),
+  // Customization tabs
+  custTabs:           document.querySelectorAll('.cust-tab'),
+  custPanels:         document.querySelectorAll('.cust-panel'),
+  btnResetSettings:   $('btn-reset-settings'),
+  // Logo preview
+  logoPreviewArea:    $('logo-preview-area'),
+  // EC radio buttons
+  ecRadios:           document.querySelectorAll('.ec-radio'),
 };
 
 // ── Frame Definitions ─────────────────────────────────────────
@@ -1296,6 +1304,59 @@ function drawFinderEye(ctx, x, y, size, bgColor) {
   intShape.drawInt(ctx, innerX, innerY, innerSize, intEyeColor);
 }
 
+// ── Customization Tabs ────────────────────────────────────────
+function switchCustTab(tabId) {
+  dom.custTabs.forEach((t) => {
+    const active = t.dataset.custTab === tabId;
+    t.classList.toggle('cust-tab--active', active);
+    t.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  dom.custPanels.forEach((p) => {
+    p.classList.toggle('hidden', p.id !== `cpanel-${tabId}`);
+  });
+}
+
+// ── Reset Settings ────────────────────────────────────────────
+function resetSettings() {
+  dom.fgColor.value = '#000000';
+  dom.bgColor.value = '#ffffff';
+  dom.fgHex.textContent = '#000000';
+  dom.bgHex.textContent = '#ffffff';
+
+  dom.paddingSlider.value = '10';
+  dom.paddingValue.textContent = '10';
+  dom.qrSize.value = '300';
+  dom.sizeValue.textContent = '300';
+
+  dom.errorCorrection.value = 'M';
+  dom.ecRadios.forEach((r) => { r.checked = r.value === 'M'; });
+
+  clearLogo();
+  selectFrame('none');
+  if (dom.frameColor) { dom.frameColor.value = '#6366f1'; dom.frameColorHex.textContent = '#6366f1'; }
+  if (dom.frameLabel) dom.frameLabel.value = '';
+
+  selectBody('square');
+  selectExtEye('square');
+  selectIntEye('square');
+  if (dom.extEyeColor) { dom.extEyeColor.value = '#000000'; dom.extEyeColorHex.textContent = '#000000'; }
+  if (dom.intEyeColor) { dom.intEyeColor.value = '#000000'; dom.intEyeColorHex.textContent = '#000000'; }
+
+  if (state.lastQrData) generateQR();
+  showToast('Settings reset.', 'success');
+}
+
+// ── Logo Preview ──────────────────────────────────────────────
+function updateLogoPreview() {
+  if (!dom.logoPreviewArea) return;
+  if (state.logoImage) {
+    dom.logoPreviewArea.innerHTML = `<img src="${state.logoImage.src}" alt="Logo preview" />`;
+  } else {
+    dom.logoPreviewArea.innerHTML = '';
+  }
+}
+
+let toastTimeout = null;
 function showToast(message, type = '', duration = 3500) {
   const el = dom.toast;
   el.textContent = message;
@@ -1581,6 +1642,7 @@ function handleLogoUpload(file) {
       state.logoImage = img;
       dom.logoFilename.textContent = file.name;
       dom.btnClearLogo.classList.remove('hidden');
+      updateLogoPreview();
       applyCanvasEffects();
     };
     img.src = e.target.result;
@@ -1593,6 +1655,7 @@ function clearLogo() {
   dom.logoUpload.value = '';
   dom.logoFilename.textContent = 'Choose image…';
   dom.btnClearLogo.classList.add('hidden');
+  updateLogoPreview();
   applyCanvasEffects();
 }
 
@@ -1907,6 +1970,26 @@ function escapeAttr(str) {
 
 // ── Event Listeners ───────────────────────────────────────────
 function bindEvents() {
+  // Customization tabs
+  dom.custTabs.forEach((tab) => {
+    tab.addEventListener('click', () => switchCustTab(tab.dataset.custTab));
+  });
+
+  // Reset settings
+  if (dom.btnResetSettings) {
+    dom.btnResetSettings.addEventListener('click', resetSettings);
+  }
+
+  // EC level radio → sync hidden select
+  dom.ecRadios.forEach((radio) => {
+    radio.addEventListener('change', () => {
+      if (radio.checked) {
+        dom.errorCorrection.value = radio.value;
+        debouncedGenerate();
+      }
+    });
+  });
+
   // Tab switching
   dom.tabs.forEach((tab) => {
     tab.addEventListener('click', () => switchTab(tab.dataset.type));

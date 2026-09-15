@@ -516,10 +516,169 @@ button, input, select, textarea {
   border: 1px solid var(--color-border);
 }
 
-.customization-panel__title {
-  font-size: var(--text-base);
-  font-weight: 600;
+/* ── Cust Tab Bar ─────────────────────────────────────────────── */
+.cust-tab-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.cust-tabs {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+}
+
+.cust-tab {
+  padding: 0.4rem 1rem;
+  min-height: 36px;
+  border: none;
+  border-radius: var(--radius-full);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast), box-shadow var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.cust-tab:hover:not(.cust-tab--active) {
   color: var(--color-text);
+  background: var(--color-surface-2);
+}
+
+.cust-tab--active {
+  background: linear-gradient(135deg, var(--color-primary), #818cf8);
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 2px 8px rgb(99 102 241 / 0.35);
+}
+
+/* Reset Settings button */
+.btn-reset-settings {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.375rem 0.75rem;
+  min-height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-xmuted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: color var(--transition-fast), background var(--transition-fast);
+  white-space: nowrap;
+}
+
+.btn-reset-settings:hover {
+  color: var(--color-danger);
+  background: color-mix(in srgb, var(--color-danger) 8%, transparent);
+}
+
+.btn-reset-settings svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+/* Cust panels */
+.cust-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  animation: fade-in var(--transition-base) ease;
+}
+
+/* ── EC Level Radio Options ──────────────────────────────────── */
+.ec-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-2);
+}
+
+.ec-option {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  user-select: none;
+}
+
+.ec-option:has(.ec-radio:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.ec-option--recommended {
+  grid-column: span 2;
+}
+
+.ec-radio {
+  accent-color: var(--color-primary);
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+
+.ec-option__badge {
+  font-size: var(--text-sm);
+  font-weight: 700;
+  color: var(--color-primary);
+  width: 20px;
+  text-align: center;
+  flex-shrink: 0;
+}
+
+.ec-option__desc {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.3;
+}
+
+.ec-option__desc strong {
+  color: var(--color-text);
+  font-size: var(--text-sm);
+}
+
+/* Form hint */
+.form-hint {
+  font-size: var(--text-xs);
+  color: var(--color-text-xmuted);
+  margin-top: var(--space-1);
+}
+
+/* Logo preview */
+.logo-preview-area {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 80px;
+}
+
+.logo-preview-area img {
+  max-width: 100px;
+  max-height: 80px;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-border);
+  object-fit: contain;
 }
 
 .custom-grid {
