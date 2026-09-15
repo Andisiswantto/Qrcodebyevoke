@@ -556,32 +556,42 @@ const FRAMES = [
   },
 
   // ── Frames from frame2.png ──────────────────────────────────
-  // fixedQrSize: 240 → QR always renders at 240×240 inside these frames
-  // User padding slider and size slider are ignored for these frames.
-  // INNER_PAD = 8px gap between QR edge and frame border.
+  // These frames use fixedQrSize so the QR is always 200×200px.
+  // extraPad defines the space AROUND the QR for the frame decorations.
+  // draw(ctx, totalW, color, labelText, qrSize, pad) receives:
+  //   totalW  = qrSize + ep.left + ep.right  (pad=0 always)
+  //   qrSize  = fixedQrSize = 200
+  //   The QR is drawn by applyCanvasEffects at (ep.left, ep.top)
+  // draw() must paint the frame AROUND that exact position.
 
   {
     id: 'f2-label-left',
     label: 'Label Left',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 240,
-    // ep.left = label strip width, ep.top/bottom/right = inner gap
-    extraPad: { top: 8, right: 8, bottom: 8, left: 120 },
+    fixedQrSize: 200,
+    extraPad: { top: 10, right: 10, bottom: 10, left: 100 },
+    // Canvas: 310×220. QR at (100, 10).
     draw(ctx, totalW, color, labelText, qrSize) {
-      // qrSize == fixedQrSize == 240 always
-      const PAD = 8, STRIP = 120, bw = 3, r = 12;
-      const totalH = qrSize + PAD * 2;
+      const ep = { top:10, right:10, bottom:10, left:100 };
+      const totalH = qrSize + ep.top + ep.bottom;
+      const bw = 3, r = 12;
+      // Outer border
       ctx.strokeStyle = color; ctx.lineWidth = bw;
       ctx.beginPath(); ctx.roundRect(bw/2, bw/2, totalW-bw, totalH-bw, r); ctx.stroke();
+      // Left color strip (0..ep.left)
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.roundRect(bw, bw, STRIP-bw, totalH-bw*2, [r-1,0,0,r-1]); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(bw, bw, ep.left-bw, totalH-bw*2, [r-1,0,0,r-1]); ctx.fill();
+      // Vertical label text centered in strip
       const text = labelText || 'SCAN ME!';
       ctx.save();
+      const fs = Math.round(Math.min(ep.left * 0.2, totalH * 0.15, 22));
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.round(Math.min(STRIP*0.22, totalH*0.18, 24))}px sans-serif`;
+      ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.translate(STRIP/2, totalH/2); ctx.rotate(-Math.PI/2); ctx.fillText(text, 0, 0);
+      ctx.translate(ep.left/2, totalH/2);
+      ctx.rotate(-Math.PI/2);
+      ctx.fillText(text, 0, 0);
       ctx.restore();
     },
   },
@@ -591,22 +601,28 @@ const FRAMES = [
     label: 'Label Right',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 240,
-    extraPad: { top: 8, right: 120, bottom: 8, left: 8 },
+    fixedQrSize: 200,
+    extraPad: { top: 10, right: 100, bottom: 10, left: 10 },
+    // Canvas: 310×220. QR at (10, 10).
     draw(ctx, totalW, color, labelText, qrSize) {
-      const PAD = 8, STRIP = 120, bw = 3, r = 12;
-      const totalH = qrSize + PAD * 2;
+      const ep = { top:10, right:100, bottom:10, left:10 };
+      const totalH = qrSize + ep.top + ep.bottom;
+      const bw = 3, r = 12;
       ctx.strokeStyle = color; ctx.lineWidth = bw;
       ctx.beginPath(); ctx.roundRect(bw/2, bw/2, totalW-bw, totalH-bw, r); ctx.stroke();
-      const stripX = totalW - STRIP;
+      // Right color strip
+      const stripX = totalW - ep.right;
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.roundRect(stripX, bw, STRIP-bw, totalH-bw*2, [0,r-1,r-1,0]); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(stripX, bw, ep.right-bw, totalH-bw*2, [0,r-1,r-1,0]); ctx.fill();
       const text = labelText || 'SCAN ME!';
       ctx.save();
+      const fs = Math.round(Math.min(ep.right * 0.2, totalH * 0.15, 22));
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.round(Math.min(STRIP*0.22, totalH*0.18, 24))}px sans-serif`;
+      ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.translate(stripX+STRIP/2, totalH/2); ctx.rotate(Math.PI/2); ctx.fillText(text, 0, 0);
+      ctx.translate(stripX + ep.right/2, totalH/2);
+      ctx.rotate(Math.PI/2);
+      ctx.fillText(text, 0, 0);
       ctx.restore();
     },
   },
@@ -616,28 +632,31 @@ const FRAMES = [
     label: 'Pill Left',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 240,
-    extraPad: { top: 8, right: 8, bottom: 8, left: 120 },
+    fixedQrSize: 200,
+    extraPad: { top: 10, right: 10, bottom: 10, left: 100 },
+    // Canvas: 310×220. QR at (100, 10). Pill r = totalH/2 = 110.
     draw(ctx, totalW, color, labelText, qrSize) {
-      const PAD = 8, STRIP = 120;
-      const totalH = qrSize + PAD * 2;  // 256
-      const r = totalH / 2;             // true pill
-      // Pill background
+      const ep = { top:10, right:10, bottom:10, left:100 };
+      const totalH = qrSize + ep.top + ep.bottom; // 220
+      const r = totalH / 2; // 110 → true pill shape
+      // Pill fill
       ctx.fillStyle = color;
       ctx.beginPath(); ctx.roundRect(0, 0, totalW, totalH, r); ctx.fill();
-      // White QR area: QR drawn at (ep.left + effectivePad, ep.top + effectivePad) = (120+0, 8+0)
+      // White QR area — exactly at (ep.left, ep.top) to (ep.left+qrSize, ep.top+qrSize)
       ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.roundRect(STRIP-2, PAD-2, qrSize+4, qrSize+4, Math.min(r*0.4,16)); ctx.fill();
-      // Label centered in left section
+      ctx.beginPath();
+      ctx.roundRect(ep.left - 3, ep.top - 3, qrSize + 6, qrSize + 6, Math.min(r * 0.35, 14));
+      ctx.fill();
+      // Label centered in left section (0..ep.left)
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fs = Math.round(Math.min(STRIP*0.22, totalH*0.2, 26));
-      ctx.font = `bold ${fs}px sans-serif`;
+      const fs = Math.round(Math.min(ep.left * 0.22, totalH * 0.18, 24));
+      ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.25;
       const sy = totalH/2 - (lines.length-1)*lh/2;
-      lines.forEach((l, i) => ctx.fillText(l, STRIP/2, sy+i*lh));
+      lines.forEach((l, i) => ctx.fillText(l, ep.left/2, sy+i*lh));
     },
   },
 
@@ -646,29 +665,31 @@ const FRAMES = [
     label: 'Pill Right',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 240,
-    extraPad: { top: 8, right: 120, bottom: 8, left: 8 },
+    fixedQrSize: 200,
+    extraPad: { top: 10, right: 100, bottom: 10, left: 10 },
+    // Canvas: 310×220. QR at (10, 10). Pill r = 110.
     draw(ctx, totalW, color, labelText, qrSize) {
-      const PAD = 8, STRIP = 120;
-      const totalH = qrSize + PAD * 2;  // 256
+      const ep = { top:10, right:100, bottom:10, left:10 };
+      const totalH = qrSize + ep.top + ep.bottom; // 220
       const r = totalH / 2;
-      // Pill background
       ctx.fillStyle = color;
       ctx.beginPath(); ctx.roundRect(0, 0, totalW, totalH, r); ctx.fill();
-      // White QR area: QR drawn at (ep.left + 0, ep.top + 0) = (8, 8)
+      // White QR area — exactly at (ep.left, ep.top)
       ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.roundRect(PAD-2, PAD-2, qrSize+4, qrSize+4, Math.min(r*0.4,16)); ctx.fill();
-      // Label centered in right section
-      const labelX = totalW - STRIP;
+      ctx.beginPath();
+      ctx.roundRect(ep.left - 3, ep.top - 3, qrSize + 6, qrSize + 6, Math.min(r * 0.35, 14));
+      ctx.fill();
+      // Label in right section (totalW-ep.right..totalW)
+      const labelX = totalW - ep.right;
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fs = Math.round(Math.min(STRIP*0.22, totalH*0.2, 26));
-      ctx.font = `bold ${fs}px sans-serif`;
+      const fs = Math.round(Math.min(ep.right * 0.22, totalH * 0.18, 24));
+      ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.25;
       const sy = totalH/2 - (lines.length-1)*lh/2;
-      lines.forEach((l, i) => ctx.fillText(l, labelX+STRIP/2, sy+i*lh));
+      lines.forEach((l, i) => ctx.fillText(l, labelX + ep.right/2, sy+i*lh));
     },
   },
 
@@ -677,23 +698,26 @@ const FRAMES = [
     label: 'Portrait Bottom',
     hasLabel: true,
     orientation: 'portrait',
-    fixedQrSize: 240,
-    extraPad: { top: 8, right: 8, bottom: 80, left: 8 },
+    fixedQrSize: 200,
+    extraPad: { top: 10, right: 10, bottom: 80, left: 10 },
+    // Canvas: 220×290. QR at (10, 10).
     draw(ctx, totalW, color, labelText, qrSize) {
-      const PAD = 8, BANNER = 80, r = 16;
-      const totalH = qrSize + PAD * 2 + BANNER;  // 336
+      const ep = { top:10, right:10, bottom:80, left:10 };
+      const totalH = qrSize + ep.top + ep.bottom; // 290
+      const r = 16;
       ctx.fillStyle = color;
       ctx.beginPath(); ctx.roundRect(0, 0, totalW, totalH, r); ctx.fill();
-      // White QR area: QR at (8, 8)
+      // White QR area at (ep.left, ep.top)
       ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.roundRect(PAD-2, PAD-2, qrSize+4, qrSize+4, 8); ctx.fill();
-      const bannerY = PAD + qrSize + PAD;
-      const bh = BANNER;
+      ctx.beginPath(); ctx.roundRect(ep.left-3, ep.top-3, qrSize+6, qrSize+6, 8); ctx.fill();
+      // Label in bottom banner
+      const bannerY = ep.top + qrSize + ep.top;
+      const bh = ep.bottom;
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fs = Math.round(Math.min(bh*0.35, totalW*0.12, 28));
-      ctx.font = `bold ${fs}px sans-serif`;
+      const fs = Math.round(Math.min(bh * 0.38, totalW * 0.13, 28));
+      ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.3;
       const sy = bannerY + bh/2 - (lines.length-1)*lh/2;
@@ -706,23 +730,25 @@ const FRAMES = [
     label: 'Portrait Top',
     hasLabel: true,
     orientation: 'portrait',
-    fixedQrSize: 240,
-    extraPad: { top: 80, right: 8, bottom: 8, left: 8 },
+    fixedQrSize: 200,
+    extraPad: { top: 80, right: 10, bottom: 10, left: 10 },
+    // Canvas: 220×290. QR at (10, 80).
     draw(ctx, totalW, color, labelText, qrSize) {
-      const PAD = 8, BANNER = 80, bw = 3, r = 16;
-      const totalH = qrSize + PAD * 2 + BANNER;  // 336
+      const ep = { top:80, right:10, bottom:10, left:10 };
+      const totalH = qrSize + ep.top + ep.bottom; // 290
+      const bw = 3, r = 16;
       ctx.strokeStyle = color; ctx.lineWidth = bw;
       ctx.beginPath(); ctx.roundRect(bw/2, bw/2, totalW-bw, totalH-bw, r); ctx.stroke();
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, totalW-bw, BANNER, [r,r,0,0]); ctx.fill();
+      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, totalW-bw, ep.top, [r,r,0,0]); ctx.fill();
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fs = Math.round(Math.min(BANNER*0.32, totalW*0.12, 28));
-      ctx.font = `bold ${fs}px sans-serif`;
+      const fs = Math.round(Math.min(ep.top * 0.32, totalW * 0.13, 28));
+      ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.3;
-      const sy = BANNER/2 - (lines.length-1)*lh/2;
+      const sy = ep.top/2 - (lines.length-1)*lh/2;
       lines.forEach((l, i) => ctx.fillText(l, totalW/2, sy+i*lh));
     },
   },
@@ -732,33 +758,38 @@ const FRAMES = [
     label: 'Speech Right',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 240,
-    extraPad: { top: 8, right: 116, bottom: 8, left: 8 },
+    fixedQrSize: 200,
+    extraPad: { top: 10, right: 110, bottom: 10, left: 10 },
+    // Canvas: 320×220. QR at (10, 10). Bubble wraps QR. Label in right 110px.
     draw(ctx, totalW, color, labelText, qrSize) {
-      const PAD = 8, STRIP = 116, bw = 3, r = 16;
-      const totalH = qrSize + PAD * 2;  // 256
-      const bubbleW = totalW - STRIP;
-      // Bubble outline around QR (left section)
+      const ep = { top:10, right:110, bottom:10, left:10 };
+      const totalH = qrSize + ep.top + ep.bottom; // 220
+      const bw = 3, r = 16;
+      // Bubble = left section only (0..totalW-ep.right)
+      const bubbleW = totalW - ep.right;
       ctx.strokeStyle = color; ctx.lineWidth = bw;
       ctx.beginPath(); ctx.roundRect(bw/2, bw/2, bubbleW-bw, totalH-bw, r); ctx.stroke();
-      // Arrow pointing right
+      // Arrow → right at mid height
       const ay = totalH / 2;
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.moveTo(bubbleW-bw, ay-14); ctx.lineTo(bubbleW+20, ay); ctx.lineTo(bubbleW-bw, ay+14); ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(bubbleW-bw, ay-12); ctx.lineTo(bubbleW+18, ay); ctx.lineTo(bubbleW-bw, ay+12);
+      ctx.closePath(); ctx.fill();
+      // Erase stroke at arrow join
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(bubbleW-bw-1, ay-12, bw+2, 24);
+      ctx.fillRect(bubbleW-bw-1, ay-10, bw+2, 20);
       // Label in right section
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = color;
-      const lx = bubbleW + 20;
+      const lx = bubbleW + 18;
       const lw = totalW - lx;
-      const fs = Math.round(Math.min(lw*0.24, totalH*0.2, 26));
-      ctx.font = `bold ${fs}px sans-serif`;
+      const fs = Math.round(Math.min(lw * 0.26, totalH * 0.18, 24));
+      ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.3;
       const sy = totalH/2 - (lines.length-1)*lh/2;
-      lines.forEach((l, i) => ctx.fillText(l, lx+lw/2, sy+i*lh));
+      lines.forEach((l, i) => ctx.fillText(l, lx + lw/2, sy+i*lh));
     },
   },
 
@@ -767,28 +798,33 @@ const FRAMES = [
     label: 'Speech Left',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 240,
-    extraPad: { top: 8, right: 8, bottom: 8, left: 116 },
+    fixedQrSize: 200,
+    extraPad: { top: 10, right: 10, bottom: 10, left: 110 },
+    // Canvas: 320×220. QR at (110, 10). Bubble wraps QR. Label in left 110px.
     draw(ctx, totalW, color, labelText, qrSize) {
-      const PAD = 8, STRIP = 116, bw = 3, r = 16;
-      const totalH = qrSize + PAD * 2;  // 256
-      const qrStartX = STRIP;
-      // Bubble outline around QR (right section)
+      const ep = { top:10, right:10, bottom:10, left:110 };
+      const totalH = qrSize + ep.top + ep.bottom; // 220
+      const bw = 3, r = 16;
+      // Bubble = right section (ep.left..totalW)
       ctx.strokeStyle = color; ctx.lineWidth = bw;
-      ctx.beginPath(); ctx.roundRect(qrStartX+bw/2, bw/2, totalW-qrStartX-bw, totalH-bw, r); ctx.stroke();
-      // Arrow pointing left
+      ctx.beginPath();
+      ctx.roundRect(ep.left+bw/2, bw/2, totalW-ep.left-bw, totalH-bw, r);
+      ctx.stroke();
+      // Arrow ← left at mid height
       const ay = totalH / 2;
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.moveTo(qrStartX+bw, ay-14); ctx.lineTo(qrStartX-20, ay); ctx.lineTo(qrStartX+bw, ay+14); ctx.closePath(); ctx.fill();
+      ctx.beginPath();
+      ctx.moveTo(ep.left+bw, ay-12); ctx.lineTo(ep.left-18, ay); ctx.lineTo(ep.left+bw, ay+12);
+      ctx.closePath(); ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(qrStartX-1, ay-12, bw+2, 24);
+      ctx.fillRect(ep.left-1, ay-10, bw+2, 20);
       // Label in left section
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = color;
-      const lw = qrStartX - 20;
-      const fs = Math.round(Math.min(lw*0.24, totalH*0.2, 26));
-      ctx.font = `bold ${fs}px sans-serif`;
+      const lw = ep.left - 18;
+      const fs = Math.round(Math.min(lw * 0.26, totalH * 0.18, 24));
+      ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.3;
       const sy = totalH/2 - (lines.length-1)*lh/2;
