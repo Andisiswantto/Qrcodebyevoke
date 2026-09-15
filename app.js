@@ -574,9 +574,9 @@ const FRAMES = [
     label: 'Label Left',
     hasLabel: true,
     orientation: 'landscape',
-    extraPad: { top: 8, right: 8, bottom: 8, left: 110 },
+    extraPad: { top: 6, right: 6, bottom: 6, left: 112 },
     draw(ctx, totalW, color, labelText, qrSize, outerPad) {
-      const totalH = qrSize + outerPad * 2 + 16;
+      const totalH = qrSize + outerPad * 2 + 12;
       const bw = 3, r = 12;
       // Full outer border
       ctx.strokeStyle = color;
@@ -584,24 +584,19 @@ const FRAMES = [
       ctx.beginPath();
       ctx.roundRect(bw / 2, bw / 2, totalW - bw, totalH - bw, r);
       ctx.stroke();
-      // Inner border for QR area (right portion)
-      const qrAreaX = 110 + outerPad;
-      ctx.beginPath();
-      ctx.roundRect(qrAreaX - 6, outerPad - 4, qrSize + 12, qrSize + 8, 8);
-      ctx.stroke();
-      // Left label area fill
+      // Left label area fill (112px wide)
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.roundRect(bw, bw, 108 - bw, totalH - bw * 2, [r - 1, 0, 0, r - 1]);
+      ctx.roundRect(bw, bw, 110 - bw, totalH - bw * 2, [r - 1, 0, 0, r - 1]);
       ctx.fill();
-      // Label text (vertical in left column)
+      // Label text (vertical, centered in left strip)
       const text = labelText || 'SCAN ME!';
       ctx.save();
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.round(totalH * 0.13)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      ctx.font = `bold ${Math.round(Math.min(totalH * 0.15, 22))}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.translate(54, totalH / 2);
+      ctx.translate(55, totalH / 2);
       ctx.rotate(-Math.PI / 2);
       ctx.fillText(text, 0, 0);
       ctx.restore();
@@ -613,9 +608,9 @@ const FRAMES = [
     label: 'Label Right',
     hasLabel: true,
     orientation: 'landscape',
-    extraPad: { top: 8, right: 110, bottom: 8, left: 8 },
+    extraPad: { top: 6, right: 112, bottom: 6, left: 6 },
     draw(ctx, totalW, color, labelText, qrSize, outerPad) {
-      const totalH = qrSize + outerPad * 2 + 16;
+      const totalH = qrSize + outerPad * 2 + 12;
       const bw = 3, r = 12;
       // Full outer border
       ctx.strokeStyle = color;
@@ -623,20 +618,20 @@ const FRAMES = [
       ctx.beginPath();
       ctx.roundRect(bw / 2, bw / 2, totalW - bw, totalH - bw, r);
       ctx.stroke();
-      // Right label area fill
-      const labelX = totalW - 108;
+      // Right label area fill (112px wide)
+      const labelX = totalW - 110;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.roundRect(labelX + bw, bw, 108 - bw * 2, totalH - bw * 2, [0, r - 1, r - 1, 0]);
+      ctx.roundRect(labelX, bw, 110 - bw, totalH - bw * 2, [0, r - 1, r - 1, 0]);
       ctx.fill();
-      // Label text (vertical in right column)
+      // Label text (vertical, centered in right strip)
       const text = labelText || 'SCAN ME!';
       ctx.save();
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${Math.round(totalH * 0.13)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      ctx.font = `bold ${Math.round(Math.min(totalH * 0.15, 22))}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.translate(labelX + 54, totalH / 2);
+      ctx.translate(labelX + 55, totalH / 2);
       ctx.rotate(Math.PI / 2);
       ctx.fillText(text, 0, 0);
       ctx.restore();
@@ -648,35 +643,34 @@ const FRAMES = [
     label: 'Pill Left',
     hasLabel: true,
     orientation: 'landscape',
-    extraPad: { top: 8, right: 8, bottom: 8, left: 100 },
+    extraPad: { top: 8, right: 8, bottom: 8, left: 108 },
     draw(ctx, totalW, color, labelText, qrSize, outerPad) {
       const totalH = qrSize + outerPad * 2 + 16;
-      const bw = 3;
-      // Full pill shape (very rounded)
+      // Full pill shape
       const r = totalH / 2;
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.roundRect(0, 0, totalW, totalH, r);
       ctx.fill();
-      // White QR area (right)
-      const qrAreaX = 100 + outerPad;
+      // White QR area — positioned at ep.left + outerPad
+      const qrX = 108 + outerPad;
+      const qrY = outerPad;
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.roundRect(qrAreaX - 6, outerPad - 4, qrSize + 12, qrSize + 8, 10);
+      ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 10);
       ctx.fill();
-      // Label text left side
+      // Label text — centered in left section (0..108+outerPad)
+      const labelAreaW = 108 + outerPad;
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fontSize = Math.round(totalH * 0.16);
+      const fontSize = Math.round(Math.min(labelAreaW * 0.22, totalH * 0.18, 24));
       ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      const lineH = fontSize * 1.2;
+      const lineH = fontSize * 1.25;
       const startY = totalH / 2 - (lines.length - 1) * lineH / 2;
-      lines.forEach((line, i) => {
-        ctx.fillText(line, 50, startY + i * lineH);
-      });
+      lines.forEach((line, i) => ctx.fillText(line, labelAreaW / 2, startY + i * lineH));
     },
   },
 
@@ -685,49 +679,47 @@ const FRAMES = [
     label: 'Pill Right',
     hasLabel: true,
     orientation: 'landscape',
-    extraPad: { top: 8, right: 100, bottom: 8, left: 8 },
+    extraPad: { top: 8, right: 108, bottom: 8, left: 8 },
     draw(ctx, totalW, color, labelText, qrSize, outerPad) {
       const totalH = qrSize + outerPad * 2 + 16;
-      // Full pill shape (very rounded)
+      // Full pill shape
       const r = totalH / 2;
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.roundRect(0, 0, totalW, totalH, r);
       ctx.fill();
-      // White QR area (left, with corner bracket icon)
-      const qrAreaX = outerPad + 8;
+      // White QR area — positioned at ep.left + outerPad = 8 + outerPad
+      const qrX = 8 + outerPad;
+      const qrY = outerPad;
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.roundRect(qrAreaX - 4, outerPad - 4, qrSize + 8, qrSize + 8, 10);
+      ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 10);
       ctx.fill();
-      // Scan corner bracket icon inside QR area
-      const bs = qrSize * 0.35, bx = qrAreaX + qrSize / 2 - bs / 2, by = outerPad + qrSize / 2 - bs / 2;
+      // Corner bracket icon on top of QR
+      const bs = qrSize * 0.5;
+      const bx = qrX + (qrSize - bs) / 2;
+      const by = qrY + (qrSize - bs) / 2;
+      const blen = bs * 0.3;
       ctx.strokeStyle = color;
-      ctx.lineWidth = 4;
+      ctx.lineWidth = Math.max(3, qrSize * 0.04);
       ctx.lineCap = 'square';
-      const blen = bs * 0.4;
-      // top-left bracket
       ctx.beginPath(); ctx.moveTo(bx, by + blen); ctx.lineTo(bx, by); ctx.lineTo(bx + blen, by); ctx.stroke();
-      // top-right bracket
       ctx.beginPath(); ctx.moveTo(bx + bs - blen, by); ctx.lineTo(bx + bs, by); ctx.lineTo(bx + bs, by + blen); ctx.stroke();
-      // bottom-left bracket
       ctx.beginPath(); ctx.moveTo(bx, by + bs - blen); ctx.lineTo(bx, by + bs); ctx.lineTo(bx + blen, by + bs); ctx.stroke();
-      // bottom-right bracket
       ctx.beginPath(); ctx.moveTo(bx + bs - blen, by + bs); ctx.lineTo(bx + bs, by + bs); ctx.lineTo(bx + bs, by + bs - blen); ctx.stroke();
-      // Label text right side
-      const labelX = totalW - 100 + 50;
+      // Label text — centered in right section
+      const labelAreaStart = 8 + outerPad + qrSize + 8;
+      const labelAreaW = totalW - labelAreaStart;
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fontSize = Math.round(totalH * 0.16);
+      const fontSize = Math.round(Math.min(labelAreaW * 0.22, totalH * 0.18, 24));
       ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      const lineH = fontSize * 1.2;
+      const lineH = fontSize * 1.25;
       const startY = totalH / 2 - (lines.length - 1) * lineH / 2;
-      lines.forEach((line, i) => {
-        ctx.fillText(line, labelX, startY + i * lineH);
-      });
+      lines.forEach((line, i) => ctx.fillText(line, labelAreaStart + labelAreaW / 2, startY + i * lineH));
     },
   },
 
@@ -739,32 +731,32 @@ const FRAMES = [
     extraPad: { top: 8, right: 8, bottom: 80, left: 8 },
     draw(ctx, totalW, color, labelText, qrSize, outerPad) {
       const totalH = qrSize + outerPad * 2 + 8 + 80;
-      const bw = 3, r = 16;
-      // Outer rounded rect
+      const r = 16;
+      // Filled background
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.roundRect(0, 0, totalW, totalH, r);
       ctx.fill();
-      // White QR area
+      // White QR area — at ep.left+outerPad, ep.top+outerPad
+      const qrX = 8 + outerPad;
+      const qrY = 8 + outerPad;
       ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.roundRect(outerPad - 4, outerPad - 4, qrSize + 8, qrSize + 8, 8);
+      ctx.roundRect(qrX - 4, qrY - 4, qrSize + 8, qrSize + 8, 8);
       ctx.fill();
-      // Label text at bottom
-      const bh = 72;
-      const bannerY = totalH - bh;
+      // Label at bottom
+      const bannerY = qrY + qrSize + outerPad + 4;
+      const bh = totalH - bannerY;
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fontSize = Math.round(bh * 0.3);
+      const fontSize = Math.round(Math.min(bh * 0.38, totalW * 0.12, 28));
       ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const lineH = fontSize * 1.3;
       const startY = bannerY + bh / 2 - (lines.length - 1) * lineH / 2;
-      lines.forEach((line, i) => {
-        ctx.fillText(line, totalW / 2, startY + i * lineH);
-      });
+      lines.forEach((line, i) => ctx.fillText(line, totalW / 2, startY + i * lineH));
     },
   },
 
@@ -777,37 +769,29 @@ const FRAMES = [
     draw(ctx, totalW, color, labelText, qrSize, outerPad) {
       const totalH = qrSize + outerPad * 2 + 8 + 80;
       const bw = 3, r = 16;
-      // Outer rounded rect
+      // Outer border
       ctx.strokeStyle = color;
       ctx.lineWidth = bw;
       ctx.beginPath();
       ctx.roundRect(bw / 2, bw / 2, totalW - bw, totalH - bw, r);
       ctx.stroke();
-      // Top banner
-      const bh = 74;
+      // Top banner fill
+      const bh = 80;
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.roundRect(bw / 2, bw / 2, totalW - bw, bh, [r, r, 0, 0]);
       ctx.fill();
-      // White QR area
-      ctx.fillStyle = '#ffffff';
-      const qrY = bh + outerPad - 4;
-      ctx.beginPath();
-      ctx.roundRect(outerPad - 4, qrY, qrSize + 8, qrSize + 8, 8);
-      ctx.fill();
-      // Label text
+      // Label text in top banner — centered
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fontSize = Math.round(bh * 0.3);
+      const fontSize = Math.round(Math.min(bh * 0.35, totalW * 0.12, 28));
       ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const lineH = fontSize * 1.3;
-      const startY = bw / 2 + bh / 2 - (lines.length - 1) * lineH / 2;
-      lines.forEach((line, i) => {
-        ctx.fillText(line, totalW / 2, startY + i * lineH);
-      });
+      const startY = bh / 2 - (lines.length - 1) * lineH / 2;
+      lines.forEach((line, i) => ctx.fillText(line, totalW / 2, startY + i * lineH));
     },
   },
 
@@ -816,43 +800,42 @@ const FRAMES = [
     label: 'Speech Right',
     hasLabel: true,
     orientation: 'landscape',
-    extraPad: { top: 8, right: 110, bottom: 8, left: 8 },
+    extraPad: { top: 8, right: 116, bottom: 8, left: 8 },
     draw(ctx, totalW, color, labelText, qrSize, outerPad) {
       const totalH = qrSize + outerPad * 2 + 16;
       const bw = 3, r = 16;
-      // Speech bubble outline around QR (left part)
-      const bubbleW = totalW - 110;
+      // Speech bubble outline around QR area (left portion)
+      const bubbleW = totalW - 116;
       ctx.strokeStyle = color;
       ctx.lineWidth = bw;
       ctx.beginPath();
       ctx.roundRect(bw / 2, bw / 2, bubbleW - bw, totalH - bw, r);
       ctx.stroke();
-      // Arrow pointing right from bubble
+      // Arrow pointing right
       const arrowY = totalH / 2;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.moveTo(bubbleW, arrowY - 12);
-      ctx.lineTo(bubbleW + 18, arrowY);
-      ctx.lineTo(bubbleW, arrowY + 12);
+      ctx.moveTo(bubbleW - bw, arrowY - 14);
+      ctx.lineTo(bubbleW + 20, arrowY);
+      ctx.lineTo(bubbleW - bw, arrowY + 14);
       ctx.closePath();
       ctx.fill();
-      // Erase bubble edge at arrow
-      ctx.strokeStyle = 'rgba(0,0,0,0)';
+      // Mask border line at arrow base
       ctx.fillStyle = ctx._eyeBg || '#ffffff';
-      ctx.fillRect(bubbleW - 2, arrowY - 10, 4, 20);
-      // Label text right
+      ctx.fillRect(bubbleW - bw - 1, arrowY - 12, bw + 2, 24);
+      // Label text — centered in right section
+      const labelAreaStart = bubbleW + 20;
+      const labelAreaW = totalW - labelAreaStart;
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = color;
-      const fontSize = Math.round(totalH * 0.15);
+      const fontSize = Math.round(Math.min(labelAreaW * 0.25, totalH * 0.18, 24));
       ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-      ctx.textAlign = 'left';
+      ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const lineH = fontSize * 1.3;
       const startY = totalH / 2 - (lines.length - 1) * lineH / 2;
-      lines.forEach((line, i) => {
-        ctx.fillText(line, totalW - 100, startY + i * lineH);
-      });
+      lines.forEach((line, i) => ctx.fillText(line, labelAreaStart + labelAreaW / 2, startY + i * lineH));
     },
   },
 
@@ -861,42 +844,41 @@ const FRAMES = [
     label: 'Speech Left',
     hasLabel: true,
     orientation: 'landscape',
-    extraPad: { top: 8, right: 8, bottom: 8, left: 110 },
+    extraPad: { top: 8, right: 8, bottom: 8, left: 116 },
     draw(ctx, totalW, color, labelText, qrSize, outerPad) {
       const totalH = qrSize + outerPad * 2 + 16;
       const bw = 3, r = 16;
-      // Speech bubble outline around QR (right part)
-      const qrStartX = 110;
+      // Speech bubble outline around QR area (right portion, starts at 116)
+      const qrStartX = 116;
       ctx.strokeStyle = color;
       ctx.lineWidth = bw;
       ctx.beginPath();
       ctx.roundRect(qrStartX + bw / 2, bw / 2, totalW - qrStartX - bw, totalH - bw, r);
       ctx.stroke();
-      // Arrow pointing left from bubble
+      // Arrow pointing left
       const arrowY = totalH / 2;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.moveTo(qrStartX, arrowY - 12);
-      ctx.lineTo(qrStartX - 18, arrowY);
-      ctx.lineTo(qrStartX, arrowY + 12);
+      ctx.moveTo(qrStartX + bw, arrowY - 14);
+      ctx.lineTo(qrStartX - 20, arrowY);
+      ctx.lineTo(qrStartX + bw, arrowY + 14);
       ctx.closePath();
       ctx.fill();
-      // Erase bubble edge at arrow
+      // Mask border line at arrow base
       ctx.fillStyle = ctx._eyeBg || '#ffffff';
-      ctx.fillRect(qrStartX - 2, arrowY - 10, 4, 20);
-      // Label text left
+      ctx.fillRect(qrStartX - 1, arrowY - 12, bw + 2, 24);
+      // Label text — centered in left section (0..qrStartX-20)
+      const labelAreaW = qrStartX - 20;
       const text = labelText || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = color;
-      const fontSize = Math.round(totalH * 0.15);
+      const fontSize = Math.round(Math.min(labelAreaW * 0.25, totalH * 0.18, 24));
       ctx.font = `bold ${fontSize}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
-      ctx.textAlign = 'right';
+      ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       const lineH = fontSize * 1.3;
       const startY = totalH / 2 - (lines.length - 1) * lineH / 2;
-      lines.forEach((line, i) => {
-        ctx.fillText(line, 100, startY + i * lineH);
-      });
+      lines.forEach((line, i) => ctx.fillText(line, labelAreaW / 2, startY + i * lineH));
     },
   },
 ];
@@ -2034,7 +2016,7 @@ function applyCanvasEffects() {
   const fgColor    = dom.fgColor.value;
   const bgColor    = dom.bgColor.value;
 
-  // Build the QR layer — use custom renderer whenever matrix is available
+  // Build the QR layer
   let qrLayer = null;
   if (state.qrMatrix) {
     qrLayer = renderQrWithShape(state.qrMatrix, size, fgColor, bgColor);
@@ -2044,7 +2026,7 @@ function applyCanvasEffects() {
     qrLayer = sourceCanvas;
   }
 
-  // Total canvas size includes user padding + frame extra padding
+  // Total canvas size = QR + user padding on all sides + frame extra padding
   const totalW = size + padding * 2 + ep.left + ep.right;
   const totalH = size + padding * 2 + ep.top  + ep.bottom;
 
@@ -2052,39 +2034,36 @@ function applyCanvasEffects() {
   canvas.width  = totalW;
   canvas.height = totalH;
   const ctx = canvas.getContext('2d');
-
-  // Store bg for shapes that need it
   ctx._eyeBg = bgColor;
 
   // Background fill
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, totalW, totalH);
 
-  // Shadow frame needs to draw bg card after shadow layer
+  const isSpecialFrame = frame.orientation === 'landscape' || frame.orientation === 'portrait';
+
+  // Shadow frame: draw shadow first, then repaint bg card
   if (frame.id === 'shadow') {
     frame.draw(ctx, totalW, frameColor, labelText, size, padding);
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, totalW - 6, totalH - 6);
   }
 
-  // For landscape/portrait frames with non-standard QR placement,
-  // draw the frame FIRST (it paints its background), then QR on top
-  const isSpecialFrame = frame.orientation === 'landscape' || frame.orientation === 'portrait';
-  if (isSpecialFrame && frame.id !== 'none') {
+  // Landscape/Portrait: draw frame background FIRST, then place QR on top
+  if (isSpecialFrame) {
     frame.draw(ctx, totalW, frameColor, labelText, size, padding);
   }
 
-  // Draw QR layer
-  const qrX = padding + ep.left;
-  const qrY = padding + ep.top;
+  // QR position: always at (ep.left + padding, ep.top + padding)
+  const qrX = ep.left + padding;
+  const qrY = ep.top  + padding;
   ctx.drawImage(qrLayer, qrX, qrY, size, size);
 
-  // Logo overlay
+  // Logo overlay (centered on QR)
   if (state.logoImage) {
     const logoSize = Math.round(size * 0.20);
     const logoX    = qrX + Math.round((size - logoSize) / 2);
     const logoY    = qrY + Math.round((size - logoSize) / 2);
-
     const pad = 4;
     ctx.fillStyle = bgColor;
     ctx.beginPath();
@@ -2097,7 +2076,7 @@ function applyCanvasEffects() {
     ctx.drawImage(state.logoImage, logoX, logoY, logoSize, logoSize);
   }
 
-  // Draw frame on top for standard (square) frames
+  // Standard frames: draw frame on top of QR
   if (!isSpecialFrame && frame.id !== 'none' && frame.id !== 'shadow') {
     frame.draw(ctx, totalW, frameColor, labelText, size, padding);
   }
