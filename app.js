@@ -2006,6 +2006,16 @@ function applyCanvasEffects() {
 
   dom.qrOutput.classList.add('hidden');
   dom.qrCanvasContainer.classList.remove('hidden');
+
+  // Scale canvas CSS size to fit preview panel while preserving aspect ratio
+  const MAX_PREVIEW = 380; // max display size in px
+  const scaleW = Math.min(1, MAX_PREVIEW / totalW);
+  const scaleH = Math.min(1, MAX_PREVIEW / totalH);
+  const scale  = Math.min(scaleW, scaleH);
+  const dispW  = Math.round(totalW * scale);
+  const dispH  = Math.round(totalH * scale);
+  dom.qrFinalCanvas.style.width  = `${dispW}px`;
+  dom.qrFinalCanvas.style.height = `${dispH}px`;
 }
 
 // ── Debounced generate ───────────────────────────────────────

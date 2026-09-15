@@ -769,15 +769,20 @@ button, input, select, textarea {
 
 .qr-canvas-container {
   border-radius: var(--radius-md);
-  overflow: auto;
+  overflow: hidden;
   box-shadow: var(--shadow-lg);
   max-width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .qr-canvas-container canvas {
   display: block;
-  max-width: 100%;
-  height: auto;
+  /* CSS size is set by JS (applyCanvasEffects) to scale proportionally */
+  /* Canvas pixel size (width/height attributes) stays at full resolution for download */
+  image-rendering: -webkit-optimize-contrast;
+  image-rendering: crisp-edges;
 }
 
 .qr-loading {
