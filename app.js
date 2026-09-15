@@ -556,42 +556,38 @@ const FRAMES = [
   },
 
   // ── Frames from frame2.png ──────────────────────────────────
-  // These frames use fixedQrSize so the QR is always 200×200px.
-  // extraPad defines the space AROUND the QR for the frame decorations.
-  // draw(ctx, totalW, color, labelText, qrSize, pad) receives:
-  //   totalW  = qrSize + ep.left + ep.right  (pad=0 always)
-  //   qrSize  = fixedQrSize = 200
-  //   The QR is drawn by applyCanvasEffects at (ep.left, ep.top)
-  // draw() must paint the frame AROUND that exact position.
+  // Pendekatan B: frame mendefinisikan qrSlot (0.0–1.0 relatif thd canvas).
+  // applyCanvasEffects menghitung qrSize & posisi QR dari slot tsb.
+  // draw(ctx, W, H, color, label) HANYA gambar dekorasi — tidak perlu tahu soal QR.
+  //
+  // qrSlot: { x, y, w, h }  → posisi & ukuran area QR sbg fraksi dari canvas
+  // canvasRatio: W/H canvas  → tentukan proporsi canvas
+  //
+  // Cara tambah frame baru:
+  //   1. Tentukan canvasRatio (misal 1.5 untuk landscape)
+  //   2. Tentukan qrSlot (misal QR di kanan 65% lebar, atas 5%, tinggi 90%)
+  //   3. Tulis draw() untuk gambar dekorasi saja
 
   {
     id: 'f2-label-left',
     label: 'Label Left',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 200,
-    extraPad: { top: 10, right: 10, bottom: 10, left: 100 },
-    // Canvas: 310×220. QR at (100, 10).
-    draw(ctx, totalW, color, labelText, qrSize) {
-      const ep = { top:10, right:10, bottom:10, left:100 };
-      const totalH = qrSize + ep.top + ep.bottom;
-      const bw = 3, r = 12;
-      // Outer border
+    canvasRatio: 310 / 220,        // lebar/tinggi canvas
+    qrSlot: { x: 100/310, y: 10/220, w: 200/310, h: 200/220 },
+    draw(ctx, W, H, color, label) {
+      const bw = 3, r = Math.round(W * 0.04);
+      const STRIP = Math.round(W * (100/310));
       ctx.strokeStyle = color; ctx.lineWidth = bw;
-      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, totalW-bw, totalH-bw, r); ctx.stroke();
-      // Left color strip (0..ep.left)
+      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.roundRect(bw, bw, ep.left-bw, totalH-bw*2, [r-1,0,0,r-1]); ctx.fill();
-      // Vertical label text centered in strip
-      const text = labelText || 'SCAN ME!';
+      ctx.beginPath(); ctx.roundRect(bw, bw, STRIP-bw, H-bw*2, [r-1,0,0,r-1]); ctx.fill();
+      const text = label || 'SCAN ME!';
       ctx.save();
-      const fs = Math.round(Math.min(ep.left * 0.2, totalH * 0.15, 22));
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${fs}px -apple-system, sans-serif`;
+      ctx.font = `bold ${Math.round(Math.min(STRIP*0.22, H*0.15, 22))}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.translate(ep.left/2, totalH/2);
-      ctx.rotate(-Math.PI/2);
-      ctx.fillText(text, 0, 0);
+      ctx.translate(STRIP/2, H/2); ctx.rotate(-Math.PI/2); ctx.fillText(text, 0, 0);
       ctx.restore();
     },
   },
@@ -601,28 +597,22 @@ const FRAMES = [
     label: 'Label Right',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 200,
-    extraPad: { top: 10, right: 100, bottom: 10, left: 10 },
-    // Canvas: 310×220. QR at (10, 10).
-    draw(ctx, totalW, color, labelText, qrSize) {
-      const ep = { top:10, right:100, bottom:10, left:10 };
-      const totalH = qrSize + ep.top + ep.bottom;
-      const bw = 3, r = 12;
+    canvasRatio: 310 / 220,
+    qrSlot: { x: 10/310, y: 10/220, w: 200/310, h: 200/220 },
+    draw(ctx, W, H, color, label) {
+      const bw = 3, r = Math.round(W * 0.04);
+      const STRIP = Math.round(W * (100/310));
+      const stripX = W - STRIP;
       ctx.strokeStyle = color; ctx.lineWidth = bw;
-      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, totalW-bw, totalH-bw, r); ctx.stroke();
-      // Right color strip
-      const stripX = totalW - ep.right;
+      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.roundRect(stripX, bw, ep.right-bw, totalH-bw*2, [0,r-1,r-1,0]); ctx.fill();
-      const text = labelText || 'SCAN ME!';
+      ctx.beginPath(); ctx.roundRect(stripX, bw, STRIP-bw, H-bw*2, [0,r-1,r-1,0]); ctx.fill();
+      const text = label || 'SCAN ME!';
       ctx.save();
-      const fs = Math.round(Math.min(ep.right * 0.2, totalH * 0.15, 22));
       ctx.fillStyle = '#ffffff';
-      ctx.font = `bold ${fs}px -apple-system, sans-serif`;
+      ctx.font = `bold ${Math.round(Math.min(STRIP*0.22, H*0.15, 22))}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.translate(stripX + ep.right/2, totalH/2);
-      ctx.rotate(Math.PI/2);
-      ctx.fillText(text, 0, 0);
+      ctx.translate(stripX + STRIP/2, H/2); ctx.rotate(Math.PI/2); ctx.fillText(text, 0, 0);
       ctx.restore();
     },
   },
@@ -632,31 +622,22 @@ const FRAMES = [
     label: 'Pill Left',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 200,
-    extraPad: { top: 10, right: 10, bottom: 10, left: 100 },
-    // Canvas: 310×220. QR at (100, 10). Pill r = totalH/2 = 110.
-    draw(ctx, totalW, color, labelText, qrSize) {
-      const ep = { top:10, right:10, bottom:10, left:100 };
-      const totalH = qrSize + ep.top + ep.bottom; // 220
-      const r = totalH / 2; // 110 → true pill shape
-      // Pill fill
+    canvasRatio: 310 / 220,
+    qrSlot: { x: 100/310, y: 10/220, w: 200/310, h: 200/220 },
+    draw(ctx, W, H, color, label) {
+      const r = H / 2;
+      const LABEL_W = Math.round(W * (100/310));
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.roundRect(0, 0, totalW, totalH, r); ctx.fill();
-      // White QR area — exactly at (ep.left, ep.top) to (ep.left+qrSize, ep.top+qrSize)
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.roundRect(ep.left - 3, ep.top - 3, qrSize + 6, qrSize + 6, Math.min(r * 0.35, 14));
-      ctx.fill();
-      // Label centered in left section (0..ep.left)
-      const text = labelText || 'SCAN ME!';
+      ctx.beginPath(); ctx.roundRect(0, 0, W, H, r); ctx.fill();
+      const text = label || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fs = Math.round(Math.min(ep.left * 0.22, totalH * 0.18, 24));
+      const fs = Math.round(Math.min(LABEL_W * 0.22, H * 0.18, 24));
       ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.25;
-      const sy = totalH/2 - (lines.length-1)*lh/2;
-      lines.forEach((l, i) => ctx.fillText(l, ep.left/2, sy+i*lh));
+      const sy = H/2 - (lines.length-1)*lh/2;
+      lines.forEach((l, i) => ctx.fillText(l, LABEL_W/2, sy+i*lh));
     },
   },
 
@@ -665,31 +646,23 @@ const FRAMES = [
     label: 'Pill Right',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 200,
-    extraPad: { top: 10, right: 100, bottom: 10, left: 10 },
-    // Canvas: 310×220. QR at (10, 10). Pill r = 110.
-    draw(ctx, totalW, color, labelText, qrSize) {
-      const ep = { top:10, right:100, bottom:10, left:10 };
-      const totalH = qrSize + ep.top + ep.bottom; // 220
-      const r = totalH / 2;
+    canvasRatio: 310 / 220,
+    qrSlot: { x: 10/310, y: 10/220, w: 200/310, h: 200/220 },
+    draw(ctx, W, H, color, label) {
+      const r = H / 2;
+      const LABEL_W = Math.round(W * (100/310));
+      const labelX = W - LABEL_W;
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.roundRect(0, 0, totalW, totalH, r); ctx.fill();
-      // White QR area — exactly at (ep.left, ep.top)
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath();
-      ctx.roundRect(ep.left - 3, ep.top - 3, qrSize + 6, qrSize + 6, Math.min(r * 0.35, 14));
-      ctx.fill();
-      // Label in right section (totalW-ep.right..totalW)
-      const labelX = totalW - ep.right;
-      const text = labelText || 'SCAN ME!';
+      ctx.beginPath(); ctx.roundRect(0, 0, W, H, r); ctx.fill();
+      const text = label || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fs = Math.round(Math.min(ep.right * 0.22, totalH * 0.18, 24));
+      const fs = Math.round(Math.min(LABEL_W * 0.22, H * 0.18, 24));
       ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.25;
-      const sy = totalH/2 - (lines.length-1)*lh/2;
-      lines.forEach((l, i) => ctx.fillText(l, labelX + ep.right/2, sy+i*lh));
+      const sy = H/2 - (lines.length-1)*lh/2;
+      lines.forEach((l, i) => ctx.fillText(l, labelX + LABEL_W/2, sy+i*lh));
     },
   },
 
@@ -698,30 +671,23 @@ const FRAMES = [
     label: 'Portrait Bottom',
     hasLabel: true,
     orientation: 'portrait',
-    fixedQrSize: 200,
-    extraPad: { top: 10, right: 10, bottom: 80, left: 10 },
-    // Canvas: 220×290. QR at (10, 10).
-    draw(ctx, totalW, color, labelText, qrSize) {
-      const ep = { top:10, right:10, bottom:80, left:10 };
-      const totalH = qrSize + ep.top + ep.bottom; // 290
-      const r = 16;
+    canvasRatio: 220 / 290,
+    qrSlot: { x: 10/220, y: 10/290, w: 200/220, h: 200/290 },
+    draw(ctx, W, H, color, label) {
+      const r = Math.round(W * 0.07);
+      const BANNER = H - Math.round(H * (220/290));
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.roundRect(0, 0, totalW, totalH, r); ctx.fill();
-      // White QR area at (ep.left, ep.top)
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.roundRect(ep.left-3, ep.top-3, qrSize+6, qrSize+6, 8); ctx.fill();
-      // Label in bottom banner
-      const bannerY = ep.top + qrSize + ep.top;
-      const bh = ep.bottom;
-      const text = labelText || 'SCAN ME!';
+      ctx.beginPath(); ctx.roundRect(0, 0, W, H, r); ctx.fill();
+      const bannerY = H - BANNER;
+      const text = label || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fs = Math.round(Math.min(bh * 0.38, totalW * 0.13, 28));
+      const fs = Math.round(Math.min(BANNER * 0.38, W * 0.13, 28));
       ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.3;
-      const sy = bannerY + bh/2 - (lines.length-1)*lh/2;
-      lines.forEach((l, i) => ctx.fillText(l, totalW/2, sy+i*lh));
+      const sy = bannerY + BANNER/2 - (lines.length-1)*lh/2;
+      lines.forEach((l, i) => ctx.fillText(l, W/2, sy+i*lh));
     },
   },
 
@@ -730,26 +696,24 @@ const FRAMES = [
     label: 'Portrait Top',
     hasLabel: true,
     orientation: 'portrait',
-    fixedQrSize: 200,
-    extraPad: { top: 80, right: 10, bottom: 10, left: 10 },
-    // Canvas: 220×290. QR at (10, 80).
-    draw(ctx, totalW, color, labelText, qrSize) {
-      const ep = { top:80, right:10, bottom:10, left:10 };
-      const totalH = qrSize + ep.top + ep.bottom; // 290
-      const bw = 3, r = 16;
+    canvasRatio: 220 / 290,
+    qrSlot: { x: 10/220, y: 80/290, w: 200/220, h: 200/290 },
+    draw(ctx, W, H, color, label) {
+      const bw = 3, r = Math.round(W * 0.07);
+      const BANNER = Math.round(H * (80/290));
       ctx.strokeStyle = color; ctx.lineWidth = bw;
-      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, totalW-bw, totalH-bw, r); ctx.stroke();
+      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
       ctx.fillStyle = color;
-      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, totalW-bw, ep.top, [r,r,0,0]); ctx.fill();
-      const text = labelText || 'SCAN ME!';
+      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, W-bw, BANNER, [r,r,0,0]); ctx.fill();
+      const text = label || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = '#ffffff';
-      const fs = Math.round(Math.min(ep.top * 0.32, totalW * 0.13, 28));
+      const fs = Math.round(Math.min(BANNER * 0.32, W * 0.13, 28));
       ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.3;
-      const sy = ep.top/2 - (lines.length-1)*lh/2;
-      lines.forEach((l, i) => ctx.fillText(l, totalW/2, sy+i*lh));
+      const sy = BANNER/2 - (lines.length-1)*lh/2;
+      lines.forEach((l, i) => ctx.fillText(l, W/2, sy+i*lh));
     },
   },
 
@@ -758,37 +722,31 @@ const FRAMES = [
     label: 'Speech Right',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 200,
-    extraPad: { top: 10, right: 110, bottom: 10, left: 10 },
-    // Canvas: 320×220. QR at (10, 10). Bubble wraps QR. Label in right 110px.
-    draw(ctx, totalW, color, labelText, qrSize) {
-      const ep = { top:10, right:110, bottom:10, left:10 };
-      const totalH = qrSize + ep.top + ep.bottom; // 220
-      const bw = 3, r = 16;
-      // Bubble = left section only (0..totalW-ep.right)
-      const bubbleW = totalW - ep.right;
+    canvasRatio: 320 / 220,
+    qrSlot: { x: 10/320, y: 10/220, w: 200/320, h: 200/220 },
+    draw(ctx, W, H, color, label) {
+      const bw = 3, r = Math.round(H * 0.07);
+      const LABEL_W = Math.round(W * (110/320));
+      const bubbleW = W - LABEL_W;
       ctx.strokeStyle = color; ctx.lineWidth = bw;
-      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, bubbleW-bw, totalH-bw, r); ctx.stroke();
-      // Arrow → right at mid height
-      const ay = totalH / 2;
+      ctx.beginPath(); ctx.roundRect(bw/2, bw/2, bubbleW-bw, H-bw, r); ctx.stroke();
+      const ay = H / 2;
       ctx.fillStyle = color;
       ctx.beginPath();
       ctx.moveTo(bubbleW-bw, ay-12); ctx.lineTo(bubbleW+18, ay); ctx.lineTo(bubbleW-bw, ay+12);
       ctx.closePath(); ctx.fill();
-      // Erase stroke at arrow join
       ctx.fillStyle = '#ffffff';
       ctx.fillRect(bubbleW-bw-1, ay-10, bw+2, 20);
-      // Label in right section
-      const text = labelText || 'SCAN ME!';
+      const text = label || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = color;
       const lx = bubbleW + 18;
-      const lw = totalW - lx;
-      const fs = Math.round(Math.min(lw * 0.26, totalH * 0.18, 24));
+      const lw = W - lx;
+      const fs = Math.round(Math.min(lw * 0.26, H * 0.18, 24));
       ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.3;
-      const sy = totalH/2 - (lines.length-1)*lh/2;
+      const sy = H/2 - (lines.length-1)*lh/2;
       lines.forEach((l, i) => ctx.fillText(l, lx + lw/2, sy+i*lh));
     },
   },
@@ -798,36 +756,31 @@ const FRAMES = [
     label: 'Speech Left',
     hasLabel: true,
     orientation: 'landscape',
-    fixedQrSize: 200,
-    extraPad: { top: 10, right: 10, bottom: 10, left: 110 },
-    // Canvas: 320×220. QR at (110, 10). Bubble wraps QR. Label in left 110px.
-    draw(ctx, totalW, color, labelText, qrSize) {
-      const ep = { top:10, right:10, bottom:10, left:110 };
-      const totalH = qrSize + ep.top + ep.bottom; // 220
-      const bw = 3, r = 16;
-      // Bubble = right section (ep.left..totalW)
+    canvasRatio: 320 / 220,
+    qrSlot: { x: 110/320, y: 10/220, w: 200/320, h: 200/220 },
+    draw(ctx, W, H, color, label) {
+      const bw = 3, r = Math.round(H * 0.07);
+      const LABEL_W = Math.round(W * (110/320));
       ctx.strokeStyle = color; ctx.lineWidth = bw;
       ctx.beginPath();
-      ctx.roundRect(ep.left+bw/2, bw/2, totalW-ep.left-bw, totalH-bw, r);
+      ctx.roundRect(LABEL_W+bw/2, bw/2, W-LABEL_W-bw, H-bw, r);
       ctx.stroke();
-      // Arrow ← left at mid height
-      const ay = totalH / 2;
+      const ay = H / 2;
       ctx.fillStyle = color;
       ctx.beginPath();
-      ctx.moveTo(ep.left+bw, ay-12); ctx.lineTo(ep.left-18, ay); ctx.lineTo(ep.left+bw, ay+12);
+      ctx.moveTo(LABEL_W+bw, ay-12); ctx.lineTo(LABEL_W-18, ay); ctx.lineTo(LABEL_W+bw, ay+12);
       ctx.closePath(); ctx.fill();
       ctx.fillStyle = '#ffffff';
-      ctx.fillRect(ep.left-1, ay-10, bw+2, 20);
-      // Label in left section
-      const text = labelText || 'SCAN ME!';
+      ctx.fillRect(LABEL_W-1, ay-10, bw+2, 20);
+      const text = label || 'SCAN ME!';
       const lines = text.split(' ');
       ctx.fillStyle = color;
-      const lw = ep.left - 18;
-      const fs = Math.round(Math.min(lw * 0.26, totalH * 0.18, 24));
+      const lw = LABEL_W - 18;
+      const fs = Math.round(Math.min(lw * 0.26, H * 0.18, 24));
       ctx.font = `bold ${fs}px -apple-system, sans-serif`;
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
       const lh = fs * 1.3;
-      const sy = totalH/2 - (lines.length-1)*lh/2;
+      const sy = H/2 - (lines.length-1)*lh/2;
       lines.forEach((l, i) => ctx.fillText(l, lw/2, sy+i*lh));
     },
   },
@@ -835,107 +788,112 @@ const FRAMES = [
 
 // ── Frame Picker UI ───────────────────────────────────────────
 
-/** Build a mini SVG thumbnail for a frame preview (48×48) */
+/** Build a mini SVG thumbnail for a frame preview */
 function buildFrameThumb(frame) {
-  const size = 48;
-  const svg  = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  const THUMB = 48; // base thumbnail size
+  const svg   = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
   svg.setAttribute('aria-hidden', 'true');
 
   if (frame.id === 'none') {
-    svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
-    svg.setAttribute('width', size);
-    svg.setAttribute('height', size);
-    // Show a bare QR outline
+    svg.setAttribute('viewBox', `0 0 ${THUMB} ${THUMB}`);
+    svg.setAttribute('width', THUMB); svg.setAttribute('height', THUMB);
     const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
     r.setAttribute('x', '8'); r.setAttribute('y', '8');
     r.setAttribute('width', '32'); r.setAttribute('height', '32');
-    r.setAttribute('fill', 'none');
-    r.setAttribute('stroke', '#94a3b8');
-    r.setAttribute('stroke-width', '1.5');
-    r.setAttribute('stroke-dasharray', '3 2');
+    r.setAttribute('fill', 'none'); r.setAttribute('stroke', '#94a3b8');
+    r.setAttribute('stroke-width', '1.5'); r.setAttribute('stroke-dasharray', '3 2');
     svg.appendChild(r);
     return svg;
   }
 
-  // Determine canvas dimensions based on orientation
-  let canvasW = size, canvasH = size;
-  if (frame.orientation === 'landscape') {
-    canvasW = Math.round(size * 1.7);
-    canvasH = size;
-  } else if (frame.orientation === 'portrait') {
-    canvasW = size;
-    canvasH = Math.round(size * 1.5);
+  // ── qrSlot frame: derive canvas size from slot proportions ──
+  if (frame.qrSlot) {
+    const slot = frame.qrSlot;
+    // Use THUMB as the QR size, derive canvas from slot
+    const qrSize = Math.round(THUMB * slot.w * 1.8); // small but visible
+    const W = Math.round(qrSize / slot.w);
+    const H = Math.round(qrSize / slot.h);
+    const qrX = Math.round(slot.x * W);
+    const qrY = Math.round(slot.y * H);
+
+    svg.setAttribute('viewBox', `0 0 ${W} ${H}`);
+    svg.setAttribute('width', W); svg.setAttribute('height', H);
+
+    const canvas = document.createElement('canvas');
+    canvas.width = W; canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, W, H);
+
+    // Draw frame decorations
+    try { frame.draw(ctx, W, H, '#6366f1', 'SCAN ME'); } catch (e) { /* */ }
+
+    // Draw QR placeholder on top
+    ctx.fillStyle = '#e2e8f0';
+    ctx.fillRect(qrX, qrY, qrSize, qrSize);
+    ctx.fillStyle = '#94a3b8';
+    const cell = Math.floor(qrSize / 5);
+    for (let row = 0; row < 5; row++) {
+      for (let col = 0; col < 5; col++) {
+        if ((row + col) % 2 === 0) ctx.fillRect(qrX + col*cell, qrY + row*cell, cell, cell);
+      }
+    }
+
+    const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+    img.setAttribute('href', canvas.toDataURL());
+    img.setAttribute('width', W); img.setAttribute('height', H);
+    svg.appendChild(img);
+    return svg;
   }
 
-  svg.setAttribute('viewBox', `0 0 ${canvasW} ${canvasH}`);
-  svg.setAttribute('width', canvasW);
-  svg.setAttribute('height', canvasH);
+  // ── Standard frame: extraPad-based ──
+  let canvasW = THUMB, canvasH = THUMB;
+  if (frame.orientation === 'landscape') { canvasW = Math.round(THUMB * 1.7); }
+  else if (frame.orientation === 'portrait') { canvasH = Math.round(THUMB * 1.5); }
 
-  // Use a temporary canvas to draw, then embed as image
+  svg.setAttribute('viewBox', `0 0 ${canvasW} ${canvasH}`);
+  svg.setAttribute('width', canvasW); svg.setAttribute('height', canvasH);
+
   const canvas = document.createElement('canvas');
-  canvas.width  = canvasW;
-  canvas.height = canvasH;
+  canvas.width = canvasW; canvas.height = canvasH;
   const ctx = canvas.getContext('2d');
   ctx._eyeBg = '#ffffff';
+  ctx.fillStyle = '#ffffff'; ctx.fillRect(0, 0, canvasW, canvasH);
 
-  // White background
-  ctx.fillStyle = '#ffffff';
-  ctx.fillRect(0, 0, canvasW, canvasH);
-
-  // Determine QR placeholder position for this frame orientation
   let qStart, qSize;
   if (frame.orientation === 'landscape') {
     qSize  = Math.round(canvasH * 0.64);
     qStart = Math.round((canvasH - qSize) / 2);
-    const ep = frame.extraPad;
-    const qrOffsetX = Math.round(ep.left * (canvasW / (ep.left + ep.right + qSize + qStart * 2)));
-    // Draw QR placeholder on right side
-    const qx = canvasW - qStart - qSize;
-    const qy = qStart;
-    ctx.fillStyle = '#e2e8f0';
-    ctx.fillRect(qx, qy, qSize, qSize);
+    const qx = canvasW - qStart - qSize, qy = qStart;
+    ctx.fillStyle = '#e2e8f0'; ctx.fillRect(qx, qy, qSize, qSize);
     ctx.fillStyle = '#94a3b8';
     const cell = Math.floor(qSize / 5);
-    for (let r2 = 0; r2 < 5; r2++) {
-      for (let c = 0; c < 5; c++) {
-        if ((r2 + c) % 2 === 0) ctx.fillRect(qx + c * cell, qy + r2 * cell, cell, cell);
-      }
-    }
-    try { frame.draw(ctx, canvasW, '#6366f1', 'SCAN ME!', qSize, qStart); } catch (e) { /* */ }
+    for (let r2 = 0; r2 < 5; r2++) for (let c = 0; c < 5; c++)
+      if ((r2+c)%2===0) ctx.fillRect(qx+c*cell, qy+r2*cell, cell, cell);
+    try { frame.draw(ctx, canvasW, '#6366f1', 'SCAN ME!', qSize, qStart); } catch (e) {}
   } else if (frame.orientation === 'portrait') {
     qSize  = Math.round(canvasW * 0.64);
     qStart = Math.round((canvasW - qSize) / 2);
     const qy = Math.round(canvasH * 0.18);
-    ctx.fillStyle = '#e2e8f0';
-    ctx.fillRect(qStart, qy, qSize, qSize);
+    ctx.fillStyle = '#e2e8f0'; ctx.fillRect(qStart, qy, qSize, qSize);
     ctx.fillStyle = '#94a3b8';
     const cell = Math.floor(qSize / 5);
-    for (let r2 = 0; r2 < 5; r2++) {
-      for (let c = 0; c < 5; c++) {
-        if ((r2 + c) % 2 === 0) ctx.fillRect(qStart + c * cell, qy + r2 * cell, cell, cell);
-      }
-    }
-    try { frame.draw(ctx, canvasW, '#6366f1', 'SCAN ME!', qSize, qStart); } catch (e) { /* */ }
+    for (let r2 = 0; r2 < 5; r2++) for (let c = 0; c < 5; c++)
+      if ((r2+c)%2===0) ctx.fillRect(qStart+c*cell, qy+r2*cell, cell, cell);
+    try { frame.draw(ctx, canvasW, '#6366f1', 'SCAN ME!', qSize, qStart); } catch (e) {}
   } else {
-    // Standard square frame
-    qStart = Math.round(size * 0.18);
-    qSize  = size - qStart * 2;
-    ctx.fillStyle = '#e2e8f0';
-    ctx.fillRect(qStart, qStart, qSize, qSize);
+    qStart = Math.round(THUMB * 0.18);
+    qSize  = THUMB - qStart * 2;
+    ctx.fillStyle = '#e2e8f0'; ctx.fillRect(qStart, qStart, qSize, qSize);
     ctx.fillStyle = '#94a3b8';
     const cell = Math.floor(qSize / 5);
-    for (let r2 = 0; r2 < 5; r2++) {
-      for (let c = 0; c < 5; c++) {
-        if ((r2 + c) % 2 === 0) ctx.fillRect(qStart + c * cell, qStart + r2 * cell, cell, cell);
-      }
-    }
-    try { frame.draw(ctx, canvasW, '#6366f1', frame.hasLabel ? 'SCAN ME' : '', qSize, qStart); } catch (e) { /* */ }
+    for (let r2 = 0; r2 < 5; r2++) for (let c = 0; c < 5; c++)
+      if ((r2+c)%2===0) ctx.fillRect(qStart+c*cell, qStart+r2*cell, cell, cell);
+    try { frame.draw(ctx, canvasW, '#6366f1', frame.hasLabel ? 'SCAN ME' : '', qSize, qStart); } catch (e) {}
   }
 
   const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
   img.setAttribute('href', canvas.toDataURL());
-  img.setAttribute('width', canvasW);
-  img.setAttribute('height', canvasH);
+  img.setAttribute('width', canvasW); img.setAttribute('height', canvasH);
   svg.appendChild(img);
   return svg;
 }
@@ -1960,31 +1918,92 @@ function applyCanvasEffects() {
   const padding    = parseInt(dom.paddingSlider.value, 10);
   const userSize   = parseInt(dom.qrSize.value, 10);
   const frame      = getActiveFrame();
-  const ep         = frame.extraPad;
   const frameColor = dom.frameColor?.value || '#6366f1';
   const labelText  = dom.frameLabel?.value.trim() || '';
   const fgColor    = dom.fgColor.value;
   const bgColor    = dom.bgColor.value;
 
-  // Frame can override QR size (landscape/portrait frames use fixed size)
+  // ── Pendekatan B: qrSlot frames ──────────────────────────────
+  if (frame.qrSlot) {
+    const slot   = frame.qrSlot;  // { x, y, w, h } in 0.0–1.0
+    const qrSize = userSize;       // QR pixel size = user slider
+    const W = Math.round(qrSize / slot.w);
+    const H = Math.round(qrSize / slot.h);
+    const qrX = Math.round(slot.x * W);
+    const qrY = Math.round(slot.y * H);
+
+    let qrLayer = null;
+    if (state.qrMatrix) {
+      qrLayer = renderQrWithShape(state.qrMatrix, qrSize, fgColor, bgColor);
+    } else {
+      const src = dom.qrOutput.querySelector('canvas');
+      if (!src) return;
+      const tmp = document.createElement('canvas');
+      tmp.width = tmp.height = qrSize;
+      tmp.getContext('2d').drawImage(src, 0, 0, qrSize, qrSize);
+      qrLayer = tmp;
+    }
+
+    const canvas = dom.qrFinalCanvas;
+    canvas.width  = W;
+    canvas.height = H;
+    const ctx = canvas.getContext('2d');
+    ctx._eyeBg = bgColor;
+
+    // 1. Background
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(0, 0, W, H);
+
+    // 2. Frame decorations (pill, border, label — no QR knowledge needed)
+    frame.draw(ctx, W, H, frameColor, labelText);
+
+    // 3. Clear QR slot area with background color
+    ctx.fillStyle = bgColor;
+    ctx.fillRect(qrX, qrY, qrSize, qrSize);
+
+    // 4. Draw QR
+    ctx.drawImage(qrLayer, qrX, qrY, qrSize, qrSize);
+
+    // 5. Logo overlay
+    if (state.logoImage) {
+      const ls = Math.round(qrSize * 0.20);
+      const lx = qrX + Math.round((qrSize - ls) / 2);
+      const ly = qrY + Math.round((qrSize - ls) / 2);
+      const lp = 4;
+      ctx.fillStyle = bgColor;
+      ctx.beginPath();
+      ctx.roundRect ? ctx.roundRect(lx-lp, ly-lp, ls+lp*2, ls+lp*2, 6)
+                    : ctx.rect(lx-lp, ly-lp, ls+lp*2, ls+lp*2);
+      ctx.fill();
+      ctx.drawImage(state.logoImage, lx, ly, ls, ls);
+    }
+
+    dom.qrOutput.classList.add('hidden');
+    dom.qrCanvasContainer.classList.remove('hidden');
+
+    const MAX = 400;
+    const scale = Math.min(1, MAX / W, MAX / H);
+    canvas.style.width  = `${Math.round(W * scale)}px`;
+    canvas.style.height = `${Math.round(H * scale)}px`;
+    return;
+  }
+
+  // ── Standard frames (extraPad-based) ─────────────────────────
+  const ep   = frame.extraPad;
   const size = frame.fixedQrSize || userSize;
 
-  // Build the QR layer at the effective size
   let qrLayer = null;
   if (state.qrMatrix) {
     qrLayer = renderQrWithShape(state.qrMatrix, size, fgColor, bgColor);
   } else {
-    const sourceCanvas = dom.qrOutput.querySelector('canvas');
-    if (!sourceCanvas) return;
-    // Scale the source canvas to size
+    const src = dom.qrOutput.querySelector('canvas');
+    if (!src) return;
     const tmp = document.createElement('canvas');
     tmp.width = tmp.height = size;
-    tmp.getContext('2d').drawImage(sourceCanvas, 0, 0, size, size);
+    tmp.getContext('2d').drawImage(src, 0, 0, size, size);
     qrLayer = tmp;
   }
 
-  // Canvas dimensions
-  // Frames with fixedQrSize ignore user padding (absorbed into extraPad)
   const effectivePad = frame.fixedQrSize ? 0 : padding;
   const totalW = size + effectivePad * 2 + ep.left + ep.right;
   const totalH = size + effectivePad * 2 + ep.top  + ep.bottom;
@@ -1995,47 +2014,38 @@ function applyCanvasEffects() {
   const ctx = canvas.getContext('2d');
   ctx._eyeBg = bgColor;
 
-  // Background
   ctx.fillStyle = bgColor;
   ctx.fillRect(0, 0, totalW, totalH);
 
   const isSpecialFrame = frame.orientation === 'landscape' || frame.orientation === 'portrait';
 
-  // Shadow frame: draw behind first
   if (frame.id === 'shadow') {
     frame.draw(ctx, totalW, frameColor, labelText, size, effectivePad);
     ctx.fillStyle = bgColor;
     ctx.fillRect(0, 0, totalW - 6, totalH - 6);
   }
 
-  // Landscape/Portrait: draw frame background FIRST (it draws pill/border + white area)
   if (isSpecialFrame) {
     frame.draw(ctx, totalW, frameColor, labelText, size, effectivePad);
   }
 
-  // Place QR at (ep.left + effectivePad, ep.top + effectivePad)
   const qrX = ep.left + effectivePad;
   const qrY = ep.top  + effectivePad;
   ctx.drawImage(qrLayer, qrX, qrY, size, size);
 
-  // Logo overlay centered on QR
   if (state.logoImage) {
-    const logoSize = Math.round(size * 0.20);
-    const logoX    = qrX + Math.round((size - logoSize) / 2);
-    const logoY    = qrY + Math.round((size - logoSize) / 2);
-    const pad = 4;
+    const ls = Math.round(size * 0.20);
+    const lx = qrX + Math.round((size - ls) / 2);
+    const ly = qrY + Math.round((size - ls) / 2);
+    const lp = 4;
     ctx.fillStyle = bgColor;
     ctx.beginPath();
-    if (ctx.roundRect) {
-      ctx.roundRect(logoX - pad, logoY - pad, logoSize + pad * 2, logoSize + pad * 2, 6);
-    } else {
-      ctx.rect(logoX - pad, logoY - pad, logoSize + pad * 2, logoSize + pad * 2);
-    }
+    ctx.roundRect ? ctx.roundRect(lx-lp, ly-lp, ls+lp*2, ls+lp*2, 6)
+                  : ctx.rect(lx-lp, ly-lp, ls+lp*2, ls+lp*2);
     ctx.fill();
-    ctx.drawImage(state.logoImage, logoX, logoY, logoSize, logoSize);
+    ctx.drawImage(state.logoImage, lx, ly, ls, ls);
   }
 
-  // Standard frames: draw border on top of QR
   if (!isSpecialFrame && frame.id !== 'none' && frame.id !== 'shadow') {
     frame.draw(ctx, totalW, frameColor, labelText, size, effectivePad);
   }
@@ -2043,17 +2053,11 @@ function applyCanvasEffects() {
   dom.qrOutput.classList.add('hidden');
   dom.qrCanvasContainer.classList.remove('hidden');
 
-  // Scale canvas CSS size to fit preview panel while preserving aspect ratio
-  const MAX_PREVIEW = 380; // max display size in px
-  const scaleW = Math.min(1, MAX_PREVIEW / totalW);
-  const scaleH = Math.min(1, MAX_PREVIEW / totalH);
-  const scale  = Math.min(scaleW, scaleH);
-  const dispW  = Math.round(totalW * scale);
-  const dispH  = Math.round(totalH * scale);
-  dom.qrFinalCanvas.style.width  = `${dispW}px`;
-  dom.qrFinalCanvas.style.height = `${dispH}px`;
+  const MAX = 400;
+  const scale = Math.min(1, MAX / totalW, MAX / totalH);
+  canvas.style.width  = `${Math.round(totalW * scale)}px`;
+  canvas.style.height = `${Math.round(totalH * scale)}px`;
 }
-
 // ── Debounced generate ───────────────────────────────────────
 function debouncedGenerate() {
   clearTimeout(state.debounceTimer);
