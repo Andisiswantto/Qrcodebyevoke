@@ -10,17 +10,19 @@
 
 // ── State ────────────────────────────────────────────────────
 const state = {
-  qrInstance:      null,   // qrcode.js instance
-  logoImage:       null,   // HTMLImageElement for logo
-  currentType:     'url',  // active input tab
-  currentUser:     null,   // Supabase user object
-  supabase:        null,   // Supabase client
-  backendAvailable: true,  // becomes false on Worker failure
-  debounceTimer:   null,
-  lastQrData:      '',     // last successfully generated QR data
-  selectedFrame:   'none', // active frame id
-  selectedBody:    'square', // active body shape id
-  qrMatrix:        null,   // raw bit matrix from QR generation
+  qrInstance:       null,
+  logoImage:        null,
+  currentType:      'url',
+  currentUser:      null,
+  supabase:         null,
+  backendAvailable: true,
+  debounceTimer:    null,
+  lastQrData:       '',
+  selectedFrame:    'none',
+  selectedBody:     'square',
+  selectedExtEye:   'square',   // external eye (outer border) shape
+  selectedIntEye:   'square',   // internal eye (inner dot) shape
+  qrMatrix:         null,
 };
 
 // ── DOM Refs ─────────────────────────────────────────────────
@@ -104,6 +106,13 @@ const dom = {
   frameLabelGroup:    $('frame-label-group'),
   // Body shape
   bodyPicker:         $('body-picker'),
+  // Eye shapes
+  extEyePicker:       $('ext-eye-picker'),
+  intEyePicker:       $('int-eye-picker'),
+  extEyeColor:        $('ext-eye-color'),
+  extEyeColorHex:     $('ext-eye-color-hex'),
+  intEyeColor:        $('int-eye-color'),
+  intEyeColorHex:     $('int-eye-color-hex'),
 };
 
 // ── Frame Definitions ─────────────────────────────────────────
@@ -826,8 +835,8 @@ function extractQrMatrix(qrInstance) {
 
 // ── Custom QR Canvas Renderer ─────────────────────────────────
 /**
- * Render QR modules using the selected body shape onto a canvas.
- * Returns an offscreen canvas with just the QR (no frame/padding).
+ * Render QR with custom body shape + custom eye shapes.
+ * Returns an offscreen canvas.
  */
 function renderQrWithShape(matrix, size, fgColor, bgColor) {
   const count  = matrix.length;
@@ -842,19 +851,24 @@ function renderQrWithShape(matrix, size, fgColor, bgColor) {
   ctx.fillRect(0, 0, size, size);
 
   const shape = BODY_SHAPES.find((s) => s.id === state.selectedBody) || BODY_SHAPES[0];
+  const needCustomEyes = state.selectedExtEye !== 'square' || state.selectedIntEye !== 'square'
+    || (dom.extEyeColor?.value && dom.extEyeColor.value !== fgColor)
+    || (dom.intEyeColor?.value && dom.intEyeColor.value !== fgColor);
 
+  // Draw body modules, skipping finder pattern zones
   for (let r = 0; r < count; r++) {
     for (let c = 0; c < count; c++) {
       if (!matrix[r][c]) continue;
+      if (isFinderModule(r, c, count)) continue; // drawn separately
       const x = c * cell;
       const y = r * cell;
       const n = {
-        top:    r > 0       && matrix[r-1][c],
-        bottom: r < count-1 && matrix[r+1][c],
-        left:   c > 0       && matrix[r][c-1],
-        right:  c < count-1 && matrix[r][c+1],
-        tl:     r > 0       && c > 0       && matrix[r-1][c-1],
-        tr:     r > 0       && c < count-1 && matrix[r-1][c+1],
+        top:    r > 0       && matrix[r-1][c] && !isFinderModule(r-1, c, count),
+        bottom: r < count-1 && matrix[r+1][c] && !isFinderModule(r+1, c, count),
+        left:   c > 0       && matrix[r][c-1] && !isFinderModule(r, c-1, count),
+        right:  c < count-1 && matrix[r][c+1] && !isFinderModule(r, c+1, count),
+        tl:     r > 0 && c > 0       && matrix[r-1][c-1],
+        tr:     r > 0 && c < count-1 && matrix[r-1][c+1],
         bl:     r < count-1 && c > 0       && matrix[r+1][c-1],
         br:     r < count-1 && c < count-1 && matrix[r+1][c+1],
       };
@@ -862,10 +876,426 @@ function renderQrWithShape(matrix, size, fgColor, bgColor) {
     }
   }
 
+  // Draw the 3 finder eyes
+  const finders = getFinderPositions(count, cell);
+  finders.forEach(({ x, y, size: eyeSize }) => {
+    drawFinderEye(ctx, x, y, eyeSize, bgColor);
+  });
+
   return canvas;
 }
 
-let toastTimeout = null;
+// ── Eye Shape Definitions ─────────────────────────────────────
+/**
+ * QR finder patterns are at top-left, top-right, bottom-left.
+ * Each consists of:
+ *   - External eye: 7×7 module border ring
+ *   - Internal eye: 3×3 filled center
+ *
+ * drawExt(ctx, x, y, size, color)
+ *   draws the outer frame of a finder pattern
+ *   x,y = pixel top-left, size = total pixel size of 7×7 area
+ *
+ * drawInt(ctx, x, y, size, color)
+ *   draws the inner dot (3×3 area centered inside the 7×7)
+ *   x,y = pixel top-left of the 3×3 area, size = pixel size of 3×3
+ */
+
+const EXT_EYE_SHAPES = [
+  {
+    id: 'square',
+    label: 'Square',
+    drawExt(ctx, x, y, s, color) {
+      const bw = s / 7;
+      ctx.fillStyle = color;
+      // Outer fill then punch out inside
+      ctx.fillRect(x, y, s, s);
+      ctx.fillStyle = 'transparent';
+      ctx.clearRect(x + bw, y + bw, s - bw * 2, s - bw * 2);
+      // Re-draw bg in the hole (use saved bg from caller)
+      ctx.fillStyle = ctx._eyeBg || '#ffffff';
+      ctx.fillRect(x + bw, y + bw, s - bw * 2, s - bw * 2);
+    },
+  },
+  {
+    id: 'rounded',
+    label: 'Rounded',
+    drawExt(ctx, x, y, s, color) {
+      const bw = s / 7, r = s * 0.22;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x, y, s, s, r);
+      ctx.fill();
+      ctx.fillStyle = ctx._eyeBg || '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(x + bw, y + bw, s - bw * 2, s - bw * 2, r * 0.6);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'circle',
+    label: 'Circle',
+    drawExt(ctx, x, y, s, color) {
+      const cx = x + s / 2, cy = y + s / 2, bw = s / 7;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(cx, cy, s / 2, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = ctx._eyeBg || '#ffffff';
+      ctx.beginPath();
+      ctx.arc(cx, cy, s / 2 - bw, 0, Math.PI * 2);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'rounded-outer',
+    label: 'Outer Round',
+    drawExt(ctx, x, y, s, color) {
+      const bw = s / 7, r = s * 0.30;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x, y, s, s, r);
+      ctx.fill();
+      // Inner hole is square
+      ctx.fillStyle = ctx._eyeBg || '#ffffff';
+      ctx.fillRect(x + bw, y + bw, s - bw * 2, s - bw * 2);
+    },
+  },
+  {
+    id: 'rounded-inner',
+    label: 'Inner Round',
+    drawExt(ctx, x, y, s, color) {
+      const bw = s / 7, r = s * 0.22;
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, s, s);
+      ctx.fillStyle = ctx._eyeBg || '#ffffff';
+      ctx.beginPath();
+      ctx.roundRect(x + bw, y + bw, s - bw * 2, s - bw * 2, r);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'diamond',
+    label: 'Diamond',
+    drawExt(ctx, x, y, s, color) {
+      const cx = x + s / 2, cy = y + s / 2, bw = s / 7;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(cx,     y);
+      ctx.lineTo(x + s,  cy);
+      ctx.lineTo(cx,     y + s);
+      ctx.lineTo(x,      cy);
+      ctx.closePath();
+      ctx.fill();
+      const i = bw * 1.4;
+      ctx.fillStyle = ctx._eyeBg || '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(cx,       y + i);
+      ctx.lineTo(x + s - i, cy);
+      ctx.lineTo(cx,       y + s - i);
+      ctx.lineTo(x + i,    cy);
+      ctx.closePath();
+      ctx.fill();
+    },
+  },
+  {
+    id: 'leaf',
+    label: 'Leaf',
+    drawExt(ctx, x, y, s, color) {
+      const bw = s / 7, r = s * 0.42;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x + s / 2, y);
+      ctx.quadraticCurveTo(x + s, y,     x + s, y + s / 2);
+      ctx.quadraticCurveTo(x + s, y + s, x + s / 2, y + s);
+      ctx.quadraticCurveTo(x,     y + s, x,     y + s / 2);
+      ctx.quadraticCurveTo(x,     y,     x + s / 2, y);
+      ctx.closePath();
+      ctx.fill();
+      ctx.fillStyle = ctx._eyeBg || '#ffffff';
+      const i = bw;
+      ctx.beginPath();
+      ctx.moveTo(x + s / 2, y + i);
+      ctx.quadraticCurveTo(x + s - i, y + i,     x + s - i, y + s / 2);
+      ctx.quadraticCurveTo(x + s - i, y + s - i, x + s / 2, y + s - i);
+      ctx.quadraticCurveTo(x + i,     y + s - i, x + i,     y + s / 2);
+      ctx.quadraticCurveTo(x + i,     y + i,     x + s / 2, y + i);
+      ctx.closePath();
+      ctx.fill();
+    },
+  },
+  {
+    id: 'cross',
+    label: 'Cross',
+    drawExt(ctx, x, y, s, color) {
+      const t = s / 3.5, bw = s / 7;
+      ctx.fillStyle = color;
+      // cross shape: H bar + V bar
+      ctx.fillRect(x, y + (s - t) / 2, s, t);
+      ctx.fillRect(x + (s - t) / 2, y, t, s);
+      // Punch inner cross hole
+      ctx.fillStyle = ctx._eyeBg || '#ffffff';
+      const i = bw;
+      ctx.fillRect(x + i, y + (s - t) / 2 + i, s - i * 2, t - i * 2);
+      ctx.fillRect(x + (s - t) / 2 + i, y + i, t - i * 2, s - i * 2);
+    },
+  },
+];
+
+const INT_EYE_SHAPES = [
+  {
+    id: 'square',
+    label: 'Square',
+    drawInt(ctx, x, y, s, color) {
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y, s, s);
+    },
+  },
+  {
+    id: 'rounded',
+    label: 'Rounded',
+    drawInt(ctx, x, y, s, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(x, y, s, s, s * 0.28);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'circle',
+    label: 'Circle',
+    drawInt(ctx, x, y, s, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x + s / 2, y + s / 2, s * 0.48, 0, Math.PI * 2);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'dot',
+    label: 'Dot',
+    drawInt(ctx, x, y, s, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(x + s / 2, y + s / 2, s * 0.32, 0, Math.PI * 2);
+      ctx.fill();
+    },
+  },
+  {
+    id: 'diamond',
+    label: 'Diamond',
+    drawInt(ctx, x, y, s, color) {
+      const cx = x + s / 2, cy = y + s / 2, h = s * 0.46;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(cx,     cy - h);
+      ctx.lineTo(cx + h, cy);
+      ctx.lineTo(cx,     cy + h);
+      ctx.lineTo(cx - h, cy);
+      ctx.closePath();
+      ctx.fill();
+    },
+  },
+  {
+    id: 'star',
+    label: 'Star',
+    drawInt(ctx, x, y, s, color) {
+      const cx = x + s / 2, cy = y + s / 2;
+      const outer = s * 0.46, inner = s * 0.20;
+      const pts = 5;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      for (let i = 0; i < pts * 2; i++) {
+        const angle = (i * Math.PI) / pts - Math.PI / 2;
+        const r2 = i % 2 === 0 ? outer : inner;
+        i === 0
+          ? ctx.moveTo(cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle))
+          : ctx.lineTo(cx + r2 * Math.cos(angle), cy + r2 * Math.sin(angle));
+      }
+      ctx.closePath();
+      ctx.fill();
+    },
+  },
+  {
+    id: 'cross',
+    label: 'Cross',
+    drawInt(ctx, x, y, s, color) {
+      const t = s * 0.38, o = (s - t) / 2;
+      ctx.fillStyle = color;
+      ctx.fillRect(x, y + o, s, t);
+      ctx.fillRect(x + o, y, t, s);
+    },
+  },
+  {
+    id: 'leaf',
+    label: 'Leaf',
+    drawInt(ctx, x, y, s, color) {
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(x + s / 2, y);
+      ctx.quadraticCurveTo(x + s, y,     x + s, y + s / 2);
+      ctx.quadraticCurveTo(x + s, y + s, x + s / 2, y + s);
+      ctx.quadraticCurveTo(x,     y + s, x,     y + s / 2);
+      ctx.quadraticCurveTo(x,     y,     x + s / 2, y);
+      ctx.closePath();
+      ctx.fill();
+    },
+  },
+];
+
+// ── Eye Picker UI ─────────────────────────────────────────────
+function buildExtEyeThumb(shape) {
+  const size = 48;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, size, size);
+  ctx._eyeBg = '#f8fafc';
+  const pad = 8;
+  try {
+    shape.drawExt(ctx, pad, pad, size - pad * 2, '#0f172a');
+  } catch (e) { /* */ }
+  const img = document.createElement('img');
+  img.src = canvas.toDataURL();
+  img.width = img.height = size;
+  img.alt = '';
+  return img;
+}
+
+function buildIntEyeThumb(shape) {
+  const size = 48;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = size;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#f8fafc';
+  ctx.fillRect(0, 0, size, size);
+  // Draw outer shell in muted color for context
+  ctx.fillStyle = '#cbd5e1';
+  ctx.fillRect(4, 4, size - 8, size - 8);
+  ctx.fillStyle = '#f8fafc';
+  const bw = (size - 8) / 7;
+  ctx.fillRect(4 + bw, 4 + bw, size - 8 - bw * 2, size - 8 - bw * 2);
+  // Draw inner shape
+  const innerPad = 4 + bw * 2;
+  const innerSize = size - innerPad * 2;
+  try {
+    shape.drawInt(ctx, innerPad, innerPad, innerSize, '#0f172a');
+  } catch (e) { /* */ }
+  const img = document.createElement('img');
+  img.src = canvas.toDataURL();
+  img.width = img.height = size;
+  img.alt = '';
+  return img;
+}
+
+function renderEyePicker(containerId, shapes, selectedId, dataAttr, buildThumbFn) {
+  const container = $(containerId);
+  if (!container) return;
+  container.innerHTML = '';
+  shapes.forEach((shape) => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = `frame-option${selectedId === shape.id ? ' selected' : ''}`;
+    btn.dataset[dataAttr] = shape.id;
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', selectedId === shape.id ? 'true' : 'false');
+    btn.setAttribute('aria-label', shape.label);
+
+    const preview = document.createElement('div');
+    preview.className = 'frame-option__preview';
+    preview.appendChild(buildThumbFn(shape));
+
+    const label = document.createElement('span');
+    label.className = 'frame-option__label';
+    label.textContent = shape.label;
+
+    btn.appendChild(preview);
+    btn.appendChild(label);
+    container.appendChild(btn);
+  });
+}
+
+function selectExtEye(id) {
+  state.selectedExtEye = id;
+  document.querySelectorAll('#ext-eye-picker .frame-option').forEach((btn) => {
+    const active = btn.dataset.extEye === id;
+    btn.classList.toggle('selected', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+  if (state.lastQrData) applyCanvasEffects();
+}
+
+function selectIntEye(id) {
+  state.selectedIntEye = id;
+  document.querySelectorAll('#int-eye-picker .frame-option').forEach((btn) => {
+    const active = btn.dataset.intEye === id;
+    btn.classList.toggle('selected', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+  if (state.lastQrData) applyCanvasEffects();
+}
+
+// ── Finder Pattern Positions ──────────────────────────────────
+/**
+ * Returns the pixel position {x, y} of the 3 finder patterns
+ * given the QR module count and cell size (in pixels).
+ * Finder patterns are always at fixed positions in the QR spec:
+ *   top-left:     col 0, row 0
+ *   top-right:    col (count-7), row 0
+ *   bottom-left:  col 0, row (count-7)
+ */
+function getFinderPositions(count, cell) {
+  return [
+    { col: 0,         row: 0         }, // top-left
+    { col: count - 7, row: 0         }, // top-right
+    { col: 0,         row: count - 7 }, // bottom-left
+  ].map(({ col, row }) => ({
+    x: col * cell,
+    y: row * cell,
+    size: 7 * cell,
+  }));
+}
+
+/**
+ * Returns true if module at (row, col) is inside any of the
+ * 7×7 finder pattern zones (including the quiet separator row/col).
+ */
+function isFinderModule(row, col, count) {
+  // 7×7 zones + 1 separator
+  const inZone = (r, c, tr, tc) => r >= tr && r < tr + 8 && c >= tc && c < tc + 8;
+  return (
+    inZone(row, col, 0, 0) ||             // top-left
+    inZone(row, col, 0, count - 8) ||     // top-right
+    inZone(row, col, count - 8, 0)        // bottom-left
+  );
+}
+
+// ── Draw Eye on Canvas ────────────────────────────────────────
+function drawFinderEye(ctx, x, y, size, bgColor) {
+  const extShape = EXT_EYE_SHAPES.find((s) => s.id === state.selectedExtEye) || EXT_EYE_SHAPES[0];
+  const intShape = INT_EYE_SHAPES.find((s) => s.id === state.selectedIntEye) || INT_EYE_SHAPES[0];
+  const extEyeColor = dom.extEyeColor?.value || dom.fgColor.value;
+  const intEyeColor = dom.intEyeColor?.value || dom.fgColor.value;
+
+  // Clear the area first with bg color
+  ctx.fillStyle = bgColor;
+  ctx.fillRect(x, y, size, size);
+
+  // Set bg reference for hollow shapes
+  ctx._eyeBg = bgColor;
+
+  // Draw outer ring (7×7 area)
+  extShape.drawExt(ctx, x, y, size, extEyeColor);
+
+  // Draw inner dot (3×3, centered in 7×7 i.e. offset by 2 cells)
+  const cell = size / 7;
+  const innerX = x + cell * 2;
+  const innerY = y + cell * 2;
+  const innerSize = cell * 3;
+  intShape.drawInt(ctx, innerX, innerY, innerSize, intEyeColor);
+}
+
 function showToast(message, type = '', duration = 3500) {
   const el = dom.toast;
   el.textContent = message;
@@ -1028,12 +1458,11 @@ function applyCanvasEffects() {
   const fgColor    = dom.fgColor.value;
   const bgColor    = dom.bgColor.value;
 
-  // Build the QR layer — prefer custom shape renderer if matrix available
+  // Build the QR layer — use custom renderer whenever matrix is available
   let qrLayer = null;
-  if (state.qrMatrix && state.selectedBody !== 'square') {
+  if (state.qrMatrix) {
     qrLayer = renderQrWithShape(state.qrMatrix, size, fgColor, bgColor);
   } else {
-    // Fallback: use qrcode.js canvas directly
     const sourceCanvas = dom.qrOutput.querySelector('canvas');
     if (!sourceCanvas) return;
     qrLayer = sourceCanvas;
@@ -1596,6 +2025,36 @@ function bindEvents() {
     });
   }
 
+  // External eye picker
+  if (dom.extEyePicker) {
+    dom.extEyePicker.addEventListener('click', (e) => {
+      const btn = e.target.closest('.frame-option');
+      if (btn && btn.dataset.extEye) selectExtEye(btn.dataset.extEye);
+    });
+  }
+
+  // Internal eye picker
+  if (dom.intEyePicker) {
+    dom.intEyePicker.addEventListener('click', (e) => {
+      const btn = e.target.closest('.frame-option');
+      if (btn && btn.dataset.intEye) selectIntEye(btn.dataset.intEye);
+    });
+  }
+
+  // Eye color pickers
+  if (dom.extEyeColor) {
+    dom.extEyeColor.addEventListener('input', () => {
+      if (dom.extEyeColorHex) dom.extEyeColorHex.textContent = dom.extEyeColor.value;
+      if (state.lastQrData) applyCanvasEffects();
+    });
+  }
+  if (dom.intEyeColor) {
+    dom.intEyeColor.addEventListener('input', () => {
+      if (dom.intEyeColorHex) dom.intEyeColorHex.textContent = dom.intEyeColor.value;
+      if (state.lastQrData) applyCanvasEffects();
+    });
+  }
+
   // Frame color
   if (dom.frameColor) {
     dom.frameColor.addEventListener('input', () => {
@@ -1616,6 +2075,8 @@ function bindEvents() {
 function init() {
   renderFramePicker();
   renderBodyPicker();
+  renderEyePicker('ext-eye-picker', EXT_EYE_SHAPES, state.selectedExtEye, 'extEye', buildExtEyeThumb);
+  renderEyePicker('int-eye-picker', INT_EYE_SHAPES, state.selectedIntEye, 'intEye', buildIntEyeThumb);
   bindEvents();
   initSupabase();
   updateCharCounter();

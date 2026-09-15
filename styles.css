@@ -1024,6 +1024,17 @@ button, input, select, textarea {
   border-radius: var(--radius-sm);
 }
 
+/* ── Eye Pickers Grid ────────────────────────────────────────── */
+.eye-pickers-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-4);
+}
+
+.frame-picker--eye {
+  grid-template-columns: repeat(3, 1fr);
+}
+
 /* ── Frame Picker ────────────────────────────────────────────── */
 .frame-picker {
   display: grid;
