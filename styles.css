@@ -1024,6 +1024,79 @@ button, input, select, textarea {
   border-radius: var(--radius-sm);
 }
 
+/* ── Frame Picker ────────────────────────────────────────────── */
+.frame-picker {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-2);
+}
+
+.frame-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2) var(--space-1);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast), box-shadow var(--transition-fast);
+  user-select: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.frame-option:hover {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.frame-option.selected {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: 0 0 0 2px rgb(99 102 241 / 0.25);
+}
+
+.frame-option__preview {
+  width: 48px;
+  height: 48px;
+  flex-shrink: 0;
+}
+
+.frame-option__label {
+  font-size: 0.65rem;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-align: center;
+  line-height: 1.2;
+}
+
+.frame-option.selected .frame-option__label {
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+/* Frame options row (color + label) */
+.frame-options {
+  margin-top: var(--space-3);
+  padding: var(--space-3);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  animation: fade-in var(--transition-base) ease;
+}
+
+.frame-options__row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+
+@keyframes fade-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
 /* ── Reduced Motion ──────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after {

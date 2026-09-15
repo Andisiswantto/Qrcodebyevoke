@@ -180,6 +180,30 @@
                 <option value="H">High (30%) — recommended with logo</option>
               </select>
             </div>
+
+            <!-- Frame Picker -->
+            <div class="form-group">
+              <label class="form-label">Frame Style</label>
+              <div class="frame-picker" id="frame-picker" role="radiogroup" aria-label="Frame style">
+                <!-- Frame options injected by JS -->
+              </div>
+              <!-- Frame color & label controls (shown when frame is active) -->
+              <div id="frame-options" class="frame-options hidden">
+                <div class="frame-options__row">
+                  <div class="form-group">
+                    <label for="frame-color" class="form-label">Frame Color</label>
+                    <div class="color-input-wrap">
+                      <input type="color" id="frame-color" class="color-input" value="#6366f1" />
+                      <span class="color-hex" id="frame-color-hex">#6366f1</span>
+                    </div>
+                  </div>
+                  <div class="form-group" id="frame-label-group">
+                    <label for="frame-label" class="form-label">Label Text</label>
+                    <input type="text" id="frame-label" class="form-input" placeholder="SCAN ME" maxlength="30" />
+                  </div>
+                </div>
+              </div>
+            </div>
           </div>
 
           <!-- Download Buttons -->

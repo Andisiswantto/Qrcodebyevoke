@@ -18,6 +18,7 @@ const state = {
   backendAvailable: true,  // becomes false on Worker failure
   debounceTimer:   null,
   lastQrData:      '',     // last successfully generated QR data
+  selectedFrame:   'none', // active frame id
 };
 
 // ── DOM Refs ─────────────────────────────────────────────────
@@ -92,9 +93,443 @@ const dom = {
   // Misc
   toast:              $('toast'),
   backendNotice:      $('backend-notice'),
+  // Frame
+  framePicker:        $('frame-picker'),
+  frameOptions:       $('frame-options'),
+  frameColor:         $('frame-color'),
+  frameColorHex:      $('frame-color-hex'),
+  frameLabel:         $('frame-label'),
+  frameLabelGroup:    $('frame-label-group'),
 };
 
-// ── Toast ────────────────────────────────────────────────────
+// ── Frame Definitions ─────────────────────────────────────────
+/**
+ * Each frame has:
+ *   id       – unique key
+ *   label    – display name
+ *   hasLabel – whether it supports a text label (banner frames)
+ *   padding  – extra canvas padding needed beyond user padding (top, right, bottom, left)
+ *   draw(ctx, total, frameColor, labelText, qrSize, outerPad)
+ *             – draw the frame ON TOP of the already-drawn QR
+ */
+const FRAMES = [
+  {
+    id: 'none',
+    label: 'None',
+    hasLabel: false,
+    extraPad: { top: 0, right: 0, bottom: 0, left: 0 },
+    draw: () => {},  // no-op
+  },
+  {
+    id: 'simple',
+    label: 'Simple',
+    hasLabel: false,
+    extraPad: { top: 8, right: 8, bottom: 8, left: 8 },
+    draw(ctx, total, color) {
+      const bw = 4;
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = bw;
+      ctx.strokeRect(bw / 2, bw / 2, total - bw, total - bw);
+    },
+  },
+  {
+    id: 'rounded',
+    label: 'Rounded',
+    hasLabel: false,
+    extraPad: { top: 10, right: 10, bottom: 10, left: 10 },
+    draw(ctx, total, color) {
+      const bw = 4, r = 18;
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = bw;
+      ctx.beginPath();
+      ctx.roundRect(bw / 2, bw / 2, total - bw, total - bw, r);
+      ctx.stroke();
+    },
+  },
+  {
+    id: 'double',
+    label: 'Double',
+    hasLabel: false,
+    extraPad: { top: 12, right: 12, bottom: 12, left: 12 },
+    draw(ctx, total, color) {
+      // Outer border
+      ctx.strokeStyle = color;
+      ctx.lineWidth = 3;
+      ctx.strokeRect(3, 3, total - 6, total - 6);
+      // Inner border
+      ctx.lineWidth = 1.5;
+      ctx.strokeRect(8, 8, total - 16, total - 16);
+    },
+  },
+  {
+    id: 'dotted',
+    label: 'Dotted',
+    hasLabel: false,
+    extraPad: { top: 10, right: 10, bottom: 10, left: 10 },
+    draw(ctx, total, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 3;
+      ctx.setLineDash([6, 5]);
+      ctx.strokeRect(4, 4, total - 8, total - 8);
+      ctx.setLineDash([]);
+    },
+  },
+  {
+    id: 'corners',
+    label: 'Corners',
+    hasLabel: false,
+    extraPad: { top: 10, right: 10, bottom: 10, left: 10 },
+    draw(ctx, total, color) {
+      const len = 28, bw = 4;
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = bw;
+      ctx.lineCap     = 'square';
+      const off = bw / 2;
+      const corners = [
+        // top-left
+        [[off, off + len], [off, off], [off + len, off]],
+        // top-right
+        [[total - off - len, off], [total - off, off], [total - off, off + len]],
+        // bottom-left
+        [[off, total - off - len], [off, total - off], [off + len, total - off]],
+        // bottom-right
+        [[total - off - len, total - off], [total - off, total - off], [total - off, total - off - len]],
+      ];
+      corners.forEach(([a, b, c]) => {
+        ctx.beginPath();
+        ctx.moveTo(...a);
+        ctx.lineTo(...b);
+        ctx.lineTo(...c);
+        ctx.stroke();
+      });
+    },
+  },
+  {
+    id: 'shadow',
+    label: 'Shadow',
+    hasLabel: false,
+    extraPad: { top: 8, right: 12, bottom: 12, left: 8 },
+    draw(ctx, total, color) {
+      // Shadow layer
+      ctx.fillStyle = color + '55'; // semi-transparent
+      ctx.fillRect(6, 6, total - 6, total - 6);
+      // White card over it
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, total - 6, total - 6);
+      // Thin border
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 1.5;
+      ctx.strokeRect(0.75, 0.75, total - 6 - 1.5, total - 6 - 1.5);
+    },
+  },
+  {
+    id: 'scan-bottom',
+    label: 'Scan Me',
+    hasLabel: true,
+    extraPad: { top: 8, right: 8, bottom: 44, left: 8 },
+    draw(ctx, total, color, labelText) {
+      const bh = 40, r = 12, bw = 3;
+      // Outer rounded rect
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = bw;
+      ctx.beginPath();
+      ctx.roundRect(bw / 2, bw / 2, total - bw, total - bw, r);
+      ctx.stroke();
+      // Banner fill at bottom
+      const bannerY = total - bh - bw / 2;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(bw / 2, bannerY);
+      ctx.lineTo(total - bw / 2, bannerY);
+      ctx.lineTo(total - bw / 2, total - r - bw / 2);
+      ctx.arcTo(total - bw / 2, total - bw / 2, total - r - bw / 2, total - bw / 2, r);
+      ctx.lineTo(r + bw / 2, total - bw / 2);
+      ctx.arcTo(bw / 2, total - bw / 2, bw / 2, total - r - bw / 2, r);
+      ctx.lineTo(bw / 2, bannerY);
+      ctx.closePath();
+      ctx.fill();
+      // Label text
+      const text = labelText || 'SCAN ME';
+      ctx.fillStyle    = '#ffffff';
+      ctx.font         = `bold ${Math.round(bh * 0.45)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, total / 2, bannerY + bh / 2);
+    },
+  },
+  {
+    id: 'scan-top',
+    label: 'Top Banner',
+    hasLabel: true,
+    extraPad: { top: 44, right: 8, bottom: 8, left: 8 },
+    draw(ctx, total, color, labelText) {
+      const bh = 40, r = 12, bw = 3;
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = bw;
+      ctx.beginPath();
+      ctx.roundRect(bw / 2, bw / 2, total - bw, total - bw, r);
+      ctx.stroke();
+      // Banner fill at top
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(r + bw / 2, bw / 2);
+      ctx.arcTo(total - bw / 2, bw / 2, total - bw / 2, r + bw / 2, r);
+      ctx.lineTo(total - bw / 2, bh + bw / 2);
+      ctx.lineTo(bw / 2, bh + bw / 2);
+      ctx.lineTo(bw / 2, r + bw / 2);
+      ctx.arcTo(bw / 2, bw / 2, r + bw / 2, bw / 2, r);
+      ctx.closePath();
+      ctx.fill();
+      // Label text
+      const text = labelText || 'SCAN ME';
+      ctx.fillStyle    = '#ffffff';
+      ctx.font         = `bold ${Math.round(bh * 0.45)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, total / 2, bw / 2 + bh / 2);
+    },
+  },
+  {
+    id: 'phone',
+    label: 'Phone',
+    hasLabel: false,
+    extraPad: { top: 36, right: 14, bottom: 52, left: 14 },
+    draw(ctx, total, color) {
+      const bw = 3, r = 22;
+      // Phone body
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = bw;
+      ctx.beginPath();
+      ctx.roundRect(bw / 2, bw / 2, total - bw, total - bw, r);
+      ctx.stroke();
+      // Top speaker
+      const spW = total * 0.25, spH = 5, spX = (total - spW) / 2, spY = 14;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.roundRect(spX, spY, spW, spH, 3);
+      ctx.fill();
+      // Bottom home button circle
+      const btnR = 10, btnX = total / 2, btnY = total - 26;
+      ctx.beginPath();
+      ctx.arc(btnX, btnY, btnR, 0, Math.PI * 2);
+      ctx.stroke();
+    },
+  },
+  {
+    id: 'tag',
+    label: 'Price Tag',
+    hasLabel: true,
+    extraPad: { top: 20, right: 8, bottom: 48, left: 8 },
+    draw(ctx, total, color, labelText) {
+      const bw = 3, r = 10;
+      // Outer border
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = bw;
+      ctx.beginPath();
+      ctx.roundRect(bw / 2, bw / 2, total - bw, total - bw, r);
+      ctx.stroke();
+      // Hole at top
+      const holeR = 8, holeX = total / 2, holeY = 14;
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = bw;
+      ctx.beginPath();
+      ctx.arc(holeX, holeY, holeR, 0, Math.PI * 2);
+      ctx.stroke();
+      // Bottom strip
+      const stripH = 36, stripY = total - stripH - bw / 2;
+      ctx.fillStyle = color;
+      ctx.fillRect(bw, stripY, total - bw * 2, stripH);
+      // Text
+      const text = labelText || 'Scan & Shop';
+      ctx.fillStyle    = '#ffffff';
+      ctx.font         = `bold ${Math.round(stripH * 0.42)}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      ctx.textAlign    = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(text, total / 2, stripY + stripH / 2);
+    },
+  },
+  {
+    id: 'heart',
+    label: 'Heart',
+    hasLabel: false,
+    extraPad: { top: 10, right: 10, bottom: 10, left: 10 },
+    draw(ctx, total, color) {
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 3;
+      // Ornamental corner hearts (small, using unicode-like path)
+      const drawHeart = (cx, cy, size) => {
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.beginPath();
+        ctx.moveTo(0, size * 0.3);
+        ctx.bezierCurveTo(-size, -size * 0.3, -size * 2, size * 0.6, 0, size * 1.3);
+        ctx.bezierCurveTo(size * 2, size * 0.6, size, -size * 0.3, 0, size * 0.3);
+        ctx.fillStyle = color;
+        ctx.fill();
+        ctx.restore();
+      };
+      const s = 8;
+      drawHeart(s * 1.5, s * 1.5, s);
+      drawHeart(total - s * 1.5, s * 1.5, s);
+      drawHeart(s * 1.5, total - s * 1.5, s);
+      drawHeart(total - s * 1.5, total - s * 1.5, s);
+      // Simple border
+      ctx.strokeRect(3, 3, total - 6, total - 6);
+    },
+  },
+  {
+    id: 'floral',
+    label: 'Floral',
+    hasLabel: false,
+    extraPad: { top: 14, right: 14, bottom: 14, left: 14 },
+    draw(ctx, total, color) {
+      // Decorative border with petal ornaments at corners
+      ctx.strokeStyle = color;
+      ctx.lineWidth   = 2;
+      ctx.strokeRect(6, 6, total - 12, total - 12);
+      // Draw simple petal at each corner
+      const drawPetal = (x, y) => {
+        ctx.fillStyle = color;
+        for (let i = 0; i < 4; i++) {
+          ctx.save();
+          ctx.translate(x, y);
+          ctx.rotate((Math.PI / 2) * i);
+          ctx.beginPath();
+          ctx.ellipse(0, -7, 4, 8, 0, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.restore();
+        }
+        // center dot
+        ctx.beginPath();
+        ctx.arc(x, y, 3, 0, Math.PI * 2);
+        ctx.fillStyle = color;
+        ctx.fill();
+      };
+      const margin = 10;
+      drawPetal(margin, margin);
+      drawPetal(total - margin, margin);
+      drawPetal(margin, total - margin);
+      drawPetal(total - margin, total - margin);
+    },
+  },
+];
+
+// ── Frame Picker UI ───────────────────────────────────────────
+
+/** Build a mini SVG thumbnail for a frame preview (48×48) */
+function buildFrameThumb(frame) {
+  const size = 48;
+  const svg  = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', `0 0 ${size} ${size}`);
+  svg.setAttribute('width', size);
+  svg.setAttribute('height', size);
+  svg.setAttribute('aria-hidden', 'true');
+
+  if (frame.id === 'none') {
+    // Show a bare QR outline
+    const r = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+    r.setAttribute('x', '8'); r.setAttribute('y', '8');
+    r.setAttribute('width', '32'); r.setAttribute('height', '32');
+    r.setAttribute('fill', 'none');
+    r.setAttribute('stroke', '#94a3b8');
+    r.setAttribute('stroke-width', '1.5');
+    r.setAttribute('stroke-dasharray', '3 2');
+    svg.appendChild(r);
+    return svg;
+  }
+
+  // Use a temporary canvas to draw, then embed as image
+  const canvas = document.createElement('canvas');
+  canvas.width  = size;
+  canvas.height = size;
+  const ctx = canvas.getContext('2d');
+
+  // White background
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, size, size);
+
+  // Draw QR placeholder (checkerboard-like)
+  ctx.fillStyle = '#e2e8f0';
+  const qStart = Math.round(size * 0.18);
+  const qSize  = size - qStart * 2;
+  ctx.fillRect(qStart, qStart, qSize, qSize);
+  ctx.fillStyle = '#94a3b8';
+  const cell = Math.floor(qSize / 5);
+  for (let r2 = 0; r2 < 5; r2++) {
+    for (let c = 0; c < 5; c++) {
+      if ((r2 + c) % 2 === 0) {
+        ctx.fillRect(qStart + c * cell, qStart + r2 * cell, cell, cell);
+      }
+    }
+  }
+
+  // Draw frame
+  try {
+    frame.draw(ctx, size, '#6366f1', frame.hasLabel ? 'SCAN ME' : '', qSize, qStart);
+  } catch (e) { /* swallow preview errors */ }
+
+  const img = document.createElementNS('http://www.w3.org/2000/svg', 'image');
+  img.setAttribute('href', canvas.toDataURL());
+  img.setAttribute('width', size);
+  img.setAttribute('height', size);
+  svg.appendChild(img);
+  return svg;
+}
+
+function renderFramePicker() {
+  const container = dom.framePicker;
+  container.innerHTML = '';
+
+  FRAMES.forEach((frame) => {
+    const btn = document.createElement('button');
+    btn.type      = 'button';
+    btn.className = `frame-option${state.selectedFrame === frame.id ? ' selected' : ''}`;
+    btn.dataset.frame = frame.id;
+    btn.setAttribute('role', 'radio');
+    btn.setAttribute('aria-checked', state.selectedFrame === frame.id ? 'true' : 'false');
+    btn.setAttribute('aria-label', frame.label);
+
+    const preview = document.createElement('div');
+    preview.className = 'frame-option__preview';
+    preview.appendChild(buildFrameThumb(frame));
+
+    const label = document.createElement('span');
+    label.className   = 'frame-option__label';
+    label.textContent = frame.label;
+
+    btn.appendChild(preview);
+    btn.appendChild(label);
+    container.appendChild(btn);
+  });
+}
+
+function selectFrame(frameId) {
+  state.selectedFrame = frameId;
+
+  // Update aria + classes
+  dom.framePicker.querySelectorAll('.frame-option').forEach((btn) => {
+    const active = btn.dataset.frame === frameId;
+    btn.classList.toggle('selected', active);
+    btn.setAttribute('aria-checked', active ? 'true' : 'false');
+  });
+
+  // Show / hide color + label controls
+  const frame = FRAMES.find((f) => f.id === frameId);
+  const hasFrame = frameId !== 'none';
+  dom.frameOptions.classList.toggle('hidden', !hasFrame);
+  if (frame) {
+    dom.frameLabelGroup.classList.toggle('hidden', !frame.hasLabel);
+  }
+
+  if (state.lastQrData) applyCanvasEffects();
+}
+
+// ── Frame Drawing Helper ──────────────────────────────────────
+function getActiveFrame() {
+  return FRAMES.find((f) => f.id === state.selectedFrame) || FRAMES[0];
+}
+
+
 let toastTimeout = null;
 function showToast(message, type = '', duration = 3500) {
   const el = dom.toast;
@@ -245,44 +680,68 @@ function showQrLoading(show) {
   dom.qrLoading.classList.toggle('hidden', !show);
 }
 
-// ── Canvas Effects (logo, padding, color) ────────────────────
+// ── Canvas Effects (logo, padding, color, frame) ─────────────
 function applyCanvasEffects() {
   // Get the canvas rendered by qrcode.js
   const sourceCanvas = dom.qrOutput.querySelector('canvas');
   if (!sourceCanvas) return;
 
-  const padding = parseInt(dom.paddingSlider.value, 10);
-  const size    = parseInt(dom.qrSize.value, 10);
-  const total   = size + padding * 2;
+  const padding   = parseInt(dom.paddingSlider.value, 10);
+  const size      = parseInt(dom.qrSize.value, 10);
+  const frame     = getActiveFrame();
+  const ep        = frame.extraPad;
+  const frameColor = dom.frameColor?.value || '#6366f1';
+  const labelText  = dom.frameLabel?.value.trim() || '';
+
+  // Total canvas size includes user padding + frame extra padding
+  const totalW = size + padding * 2 + ep.left + ep.right;
+  const totalH = size + padding * 2 + ep.top  + ep.bottom;
 
   const canvas  = dom.qrFinalCanvas;
-  canvas.width  = total;
-  canvas.height = total;
+  canvas.width  = totalW;
+  canvas.height = totalH;
   const ctx = canvas.getContext('2d');
 
   // Background fill
   ctx.fillStyle = dom.bgColor.value;
-  ctx.fillRect(0, 0, total, total);
+  ctx.fillRect(0, 0, totalW, totalH);
+
+  // For shadow frame, we need to redraw bg after shadow layer
+  if (frame.id === 'shadow') {
+    // Draw shadow first, then bg card, then QR
+    frame.draw(ctx, totalW < totalH ? totalW : totalH, frameColor, labelText, size, padding);
+    ctx.fillStyle = dom.bgColor.value;
+    const adj = 6; // matches shadow offset in frame def
+    ctx.fillRect(0, 0, totalW - adj, totalH - adj);
+  }
 
   // Draw QR
-  ctx.drawImage(sourceCanvas, padding, padding, size, size);
+  const qrX = padding + ep.left;
+  const qrY = padding + ep.top;
+  ctx.drawImage(sourceCanvas, qrX, qrY, size, size);
 
   // Logo overlay
   if (state.logoImage) {
-    const logoSize = Math.round(size * 0.20); // 20% of QR size
-    const logoX    = padding + Math.round((size - logoSize) / 2);
-    const logoY    = padding + Math.round((size - logoSize) / 2);
+    const logoSize = Math.round(size * 0.20);
+    const logoX    = qrX + Math.round((size - logoSize) / 2);
+    const logoY    = qrY + Math.round((size - logoSize) / 2);
 
-    // White background behind logo for readability
     const pad = 4;
     ctx.fillStyle = dom.bgColor.value;
     ctx.beginPath();
-    ctx.roundRect
-      ? ctx.roundRect(logoX - pad, logoY - pad, logoSize + pad * 2, logoSize + pad * 2, 6)
-      : ctx.rect(logoX - pad, logoY - pad, logoSize + pad * 2, logoSize + pad * 2);
+    if (ctx.roundRect) {
+      ctx.roundRect(logoX - pad, logoY - pad, logoSize + pad * 2, logoSize + pad * 2, 6);
+    } else {
+      ctx.rect(logoX - pad, logoY - pad, logoSize + pad * 2, logoSize + pad * 2);
+    }
     ctx.fill();
-
     ctx.drawImage(state.logoImage, logoX, logoY, logoSize, logoSize);
+  }
+
+  // Draw frame on top (except shadow which was drawn first)
+  if (frame.id !== 'none' && frame.id !== 'shadow') {
+    const total = Math.max(totalW, totalH);
+    frame.draw(ctx, totalW, frameColor, labelText, size, padding);
   }
 
   dom.qrOutput.classList.add('hidden');
@@ -309,58 +768,15 @@ function downloadSvg() {
   const data = state.lastQrData;
   if (!data) return;
 
-  const size     = parseInt(dom.qrSize.value, 10);
-  const padding  = parseInt(dom.paddingSlider.value, 10);
-  const total    = size + padding * 2;
-  const fg       = dom.fgColor.value;
-  const bg       = dom.bgColor.value;
+  // Always use the final canvas (which includes frame) as PNG-embedded SVG
+  // This guarantees frame is included in export
+  const canvas = dom.qrFinalCanvas;
+  if (!canvas || !canvas.width) return;
 
-  // Build QR matrix using qrcode.js internal (bit matrix extraction)
-  const qrObj = new QRCode(document.createElement('div'), {
-    text: data, width: size, height: size,
-    colorDark: fg, colorLight: bg,
-    correctLevel: getQrConfig().correctLevel,
-  });
-
-  const qrCanvas = qrObj._el?.querySelector('canvas') || qrObj._oDrawing?._elCanvas;
-  if (!qrCanvas) {
-    // Fallback: use current canvas as PNG embedded in SVG
-    const pngData = dom.qrFinalCanvas.toDataURL('image/png');
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}">
-  <rect width="${total}" height="${total}" fill="${bg}"/>
-  <image href="${pngData}" x="${padding}" y="${padding}" width="${size}" height="${size}"/>
-</svg>`;
-    triggerSvgDownload(svg);
-    return;
-  }
-
-  // Extract pixel data from qr canvas and build proper SVG paths
-  const offCtx = document.createElement('canvas').getContext('2d');
-  offCtx.canvas.width  = qrCanvas.width;
-  offCtx.canvas.height = qrCanvas.height;
-  offCtx.drawImage(qrCanvas, 0, 0);
-
-  const imgData  = offCtx.getImageData(0, 0, qrCanvas.width, qrCanvas.height);
-  const modules  = qrCanvas.width;
-  const cellSize = size / modules;
-  let rects      = '';
-
-  for (let row = 0; row < modules; row++) {
-    for (let col = 0; col < modules; col++) {
-      const idx  = (row * modules + col) * 4;
-      const dark = imgData.data[idx] < 128; // R channel < 128 = dark cell
-      if (dark) {
-        const x = (padding + col * cellSize).toFixed(2);
-        const y = (padding + row * cellSize).toFixed(2);
-        const s = cellSize.toFixed(2);
-        rects += `<rect x="${x}" y="${y}" width="${s}" height="${s}" fill="${fg}"/>`;
-      }
-    }
-  }
-
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${total} ${total}" width="${total}" height="${total}">
-  <rect width="${total}" height="${total}" fill="${bg}"/>
-  ${rects}
+  const pngData = canvas.toDataURL('image/png');
+  const { width, height } = canvas;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${width} ${height}" width="${width}" height="${height}">
+  <image href="${pngData}" x="0" y="0" width="${width}" height="${height}"/>
 </svg>`;
   triggerSvgDownload(svg);
 }
@@ -822,10 +1238,32 @@ function bindEvents() {
     const url = dom.shortUrlLink.textContent.trim();
     if (url) copyToClipboard(url);
   });
+
+  // Frame picker — event delegation
+  dom.framePicker.addEventListener('click', (e) => {
+    const btn = e.target.closest('.frame-option');
+    if (btn) selectFrame(btn.dataset.frame);
+  });
+
+  // Frame color
+  if (dom.frameColor) {
+    dom.frameColor.addEventListener('input', () => {
+      if (dom.frameColorHex) dom.frameColorHex.textContent = dom.frameColor.value;
+      if (state.lastQrData) applyCanvasEffects();
+    });
+  }
+
+  // Frame label text
+  if (dom.frameLabel) {
+    dom.frameLabel.addEventListener('input', () => {
+      if (state.lastQrData) applyCanvasEffects();
+    });
+  }
 }
 
 // ── Init ──────────────────────────────────────────────────────
 function init() {
+  renderFramePicker();
   bindEvents();
   initSupabase();
   updateCharCounter();
