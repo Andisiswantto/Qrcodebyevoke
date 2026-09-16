@@ -255,12 +255,18 @@ function composeQR(opts) {
   // 4. Draw QR
   ctx.drawImage(qrCanvas, qrX, qrY, qrPixels, qrPixels);
 
-  // 5. Logo overlay
+  // 5. Logo overlay — render at source resolution then downscale for crisp result
   if (logoImage) {
     const ls = Math.round(qrPixels * Math.min(logoSize, 0.30));
     const lx = qrX + Math.round((qrPixels - ls) / 2);
     const ly = qrY + Math.round((qrPixels - ls) / 2);
     const lp = Math.round(ls * 0.08);
+
+    // Use high-quality downsampling
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
+    // White backing pad
     if (!transparent) {
       ctx.fillStyle = bgColor;
       ctx.beginPath();
@@ -268,7 +274,46 @@ function composeQR(opts) {
       else ctx.rect(lx-lp, ly-lp, ls+lp*2, ls+lp*2);
       ctx.fill();
     }
-    ctx.drawImage(logoImage, lx, ly, ls, ls);
+
+    // Draw via intermediate hi-res canvas to avoid browser downscale artifacts
+    const srcW = logoImage.naturalWidth  || logoImage.width;
+    const srcH = logoImage.naturalHeight || logoImage.height;
+
+    if (srcW > 0 && srcH > 0) {
+      // Step-down: if source is more than 2× the target size, halve it iteratively
+      let tmpCanvas = document.createElement('canvas');
+      let tmpCtx    = tmpCanvas.getContext('2d');
+      let curW = srcW, curH = srcH;
+      tmpCanvas.width  = curW;
+      tmpCanvas.height = curH;
+      tmpCtx.drawImage(logoImage, 0, 0);
+
+      // Keep aspect ratio for ls × ls bounding box
+      const logoAspect = srcW / srcH;
+      const drawW = logoAspect >= 1 ? ls : Math.round(ls * logoAspect);
+      const drawH = logoAspect >= 1 ? Math.round(ls / logoAspect) : ls;
+      const drawX = lx + Math.round((ls - drawW) / 2);
+      const drawY = ly + Math.round((ls - drawH) / 2);
+
+      while (curW > drawW * 2 && curH > drawH * 2) {
+        const nw = Math.max(Math.floor(curW / 2), drawW);
+        const nh = Math.max(Math.floor(curH / 2), drawH);
+        const next = document.createElement('canvas');
+        next.width  = nw;
+        next.height = nh;
+        const nctx = next.getContext('2d');
+        nctx.imageSmoothingEnabled = true;
+        nctx.imageSmoothingQuality = 'high';
+        nctx.drawImage(tmpCanvas, 0, 0, nw, nh);
+        tmpCanvas = next;
+        tmpCtx    = nctx;
+        curW = nw; curH = nh;
+      }
+
+      ctx.drawImage(tmpCanvas, drawX, drawY, drawW, drawH);
+    } else {
+      ctx.drawImage(logoImage, lx, ly, ls, ls);
+    }
   }
 
   return canvas;

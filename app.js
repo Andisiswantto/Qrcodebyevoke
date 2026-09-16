@@ -26,6 +26,134 @@ const state = {
   composedCanvas:   null,          // last composed canvas (for export)
 };
 
+// ── Persistence (localStorage) ────────────────────────────────
+const STORAGE_KEY = 'qrgen_state_v1';
+
+/**
+ * Keys that can be serialised to localStorage.
+ * logoImage is stored as a base64 data URL under a separate key.
+ */
+function saveStateToStorage() {
+  try {
+    const serialisable = {
+      currentType:    state.currentType,
+      selectedBody:   state.selectedBody,
+      selectedExtEye: state.selectedExtEye,
+      selectedIntEye: state.selectedIntEye,
+      frameCategory:  state.frameCategory,
+      selectedFrameId: state.selectedFrame?.id ?? null,
+      // input values
+      inputUrl:   document.getElementById('qr-input-url')?.value   ?? '',
+      inputText:  document.getElementById('qr-input-text')?.value  ?? '',
+      inputEmail: document.getElementById('qr-input-email')?.value ?? '',
+      inputPhone: document.getElementById('qr-input-phone')?.value ?? '',
+      // colours
+      fgColor:      document.getElementById('fg-color')?.value      ?? '#000000',
+      bgColor:      document.getElementById('bg-color')?.value      ?? '#ffffff',
+      frameColor:   document.getElementById('frame-color')?.value   ?? '#6366f1',
+      extEyeColor:  document.getElementById('ext-eye-color')?.value ?? '#000000',
+      intEyeColor:  document.getElementById('int-eye-color')?.value ?? '#000000',
+      // sliders
+      padding:      document.getElementById('padding-slider')?.value ?? '10',
+      qrSize:       document.getElementById('qr-size')?.value        ?? '300',
+      // misc
+      frameLabel:   document.getElementById('frame-label')?.value    ?? '',
+      ecLevel:      document.getElementById('error-correction')?.value ?? 'M',
+      logoSize:     document.querySelector('.logo-size-radio:checked')?.value ?? '0.20',
+      pngResolution: document.getElementById('png-resolution')?.value ?? '2000',
+    };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(serialisable));
+
+    // Store logo separately (can be large)
+    if (state.logoImage?.src) {
+      try { localStorage.setItem(STORAGE_KEY + '_logo', state.logoImage.src); }
+      catch { /* quota exceeded — skip logo */ }
+    } else {
+      localStorage.removeItem(STORAGE_KEY + '_logo');
+    }
+  } catch (e) {
+    console.warn('[Storage] save failed', e);
+  }
+}
+
+function loadStateFromStorage() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    return JSON.parse(raw);
+  } catch { return null; }
+}
+
+function applyStoredState(saved) {
+  if (!saved) return;
+
+  // Input type
+  if (saved.currentType) state.currentType = saved.currentType;
+
+  // Input values — set before switchTab so the right field gets the value
+  const setVal = (id, v) => { const el = document.getElementById(id); if (el && v !== undefined) el.value = v; };
+  setVal('qr-input-url',   saved.inputUrl);
+  setVal('qr-input-text',  saved.inputText);
+  setVal('qr-input-email', saved.inputEmail);
+  setVal('qr-input-phone', saved.inputPhone);
+
+  // Colours
+  const setColor = (id, hexId, v) => {
+    const el = document.getElementById(id);
+    const hx = document.getElementById(hexId);
+    if (el && v) { el.value = v; if (hx) hx.textContent = v; }
+  };
+  setColor('fg-color',      'fg-hex',            saved.fgColor);
+  setColor('bg-color',      'bg-hex',            saved.bgColor);
+  setColor('frame-color',   'frame-color-hex',   saved.frameColor);
+  setColor('ext-eye-color', 'ext-eye-color-hex', saved.extEyeColor);
+  setColor('int-eye-color', 'int-eye-color-hex', saved.intEyeColor);
+
+  // Sliders
+  const setSlider = (id, valId, v) => {
+    const el = document.getElementById(id);
+    const vl = document.getElementById(valId);
+    if (el && v !== undefined) { el.value = v; if (vl) vl.textContent = v; }
+  };
+  setSlider('padding-slider', 'padding-value', saved.padding);
+  setSlider('qr-size',        'size-value',    saved.qrSize);
+
+  // Error correction
+  if (saved.ecLevel) {
+    const sel = document.getElementById('error-correction');
+    if (sel) sel.value = saved.ecLevel;
+    document.querySelectorAll('.ec-radio').forEach((r) => {
+      r.checked = r.value === saved.ecLevel;
+    });
+  }
+
+  // Logo size
+  if (saved.logoSize) {
+    document.querySelectorAll('.logo-size-radio').forEach((r) => {
+      r.checked = r.value === saved.logoSize;
+      r.closest('.logo-size-option')?.classList.toggle('logo-size-option--active', r.checked);
+    });
+  }
+
+  // PNG resolution
+  setVal('png-resolution', saved.pngResolution);
+
+  // Frame label
+  setVal('frame-label', saved.frameLabel);
+
+  // Body / eye shapes
+  if (saved.selectedBody)   state.selectedBody   = saved.selectedBody;
+  if (saved.selectedExtEye) state.selectedExtEye = saved.selectedExtEye;
+  if (saved.selectedIntEye) state.selectedIntEye = saved.selectedIntEye;
+  if (saved.frameCategory)  state.frameCategory  = saved.frameCategory;
+
+  // Selected frame
+  if (saved.selectedFrameId) {
+    const frame = (window.ANTT_FRAMES || []).find((f) => f.id === saved.selectedFrameId) ?? null;
+    state.selectedFrame = frame;
+  }
+}
+
 // ── DOM Refs ──────────────────────────────────────────────────
 const $ = (id) => document.getElementById(id);
 
@@ -466,6 +594,7 @@ function selectFrame(frameId) {
     }
   }
 
+  saveStateToStorage();
   if (state.lastQrData) compose();
 }
 
@@ -526,6 +655,7 @@ function selectBody(id) {
     btn.classList.toggle('selected', a);
     btn.setAttribute('aria-checked', a ? 'true' : 'false');
   });
+  saveStateToStorage();
   if (state.lastQrData) generateQR();
 }
 
@@ -589,6 +719,7 @@ function selectExtEye(id) {
     btn.classList.toggle('selected', a);
     btn.setAttribute('aria-checked', a ? 'true' : 'false');
   });
+  saveStateToStorage();
   if (state.lastQrData) compose();
 }
 
@@ -599,6 +730,7 @@ function selectIntEye(id) {
     btn.classList.toggle('selected', a);
     btn.setAttribute('aria-checked', a ? 'true' : 'false');
   });
+  saveStateToStorage();
   if (state.lastQrData) compose();
 }
 
@@ -778,6 +910,7 @@ function handleLogoUpload(file) {
       if (dom.logoFilename) dom.logoFilename.textContent = file.name;
       if (dom.btnClearLogo) dom.btnClearLogo.classList.remove('hidden');
       updateLogoPreview();
+      saveStateToStorage();
       if (state.lastQrData) compose();
     };
     img.src = e.target.result;
@@ -791,6 +924,7 @@ function clearLogo() {
   if (dom.logoFilename) dom.logoFilename.textContent = 'Choose image…';
   if (dom.btnClearLogo) dom.btnClearLogo.classList.add('hidden');
   updateLogoPreview();
+  saveStateToStorage();
   if (state.lastQrData) compose();
 }
 
@@ -817,7 +951,7 @@ function switchTab(type) {
 // ── Debounce ──────────────────────────────────────────────────
 function debouncedGenerate() {
   clearTimeout(state.debounceTimer);
-  state.debounceTimer = setTimeout(generateQR, 280);
+  state.debounceTimer = setTimeout(() => { saveStateToStorage(); generateQR(); }, 280);
 }
 
 // ── Toast ─────────────────────────────────────────────────────
@@ -1030,6 +1164,7 @@ function bindEvents() {
       document.querySelectorAll('.logo-size-option').forEach((l) => {
         l.classList.toggle('logo-size-option--active', l.querySelector('input')?.checked);
       });
+      saveStateToStorage();
       if (state.lastQrData) compose();
     });
   });
@@ -1043,12 +1178,13 @@ function bindEvents() {
   });
 
   // Colors
-  dom.fgColor.addEventListener('input', () => { dom.fgHex.textContent = dom.fgColor.value; debouncedGenerate(); });
-  dom.bgColor.addEventListener('input', () => { dom.bgHex.textContent = dom.bgColor.value; debouncedGenerate(); });
+  dom.fgColor.addEventListener('input', () => { dom.fgHex.textContent = dom.fgColor.value; saveStateToStorage(); debouncedGenerate(); });
+  dom.bgColor.addEventListener('input', () => { dom.bgHex.textContent = dom.bgColor.value; saveStateToStorage(); debouncedGenerate(); });
 
   // Sliders
   dom.paddingSlider?.addEventListener('input', () => {
     dom.paddingValue.textContent = dom.paddingSlider.value;
+    saveStateToStorage();
     if (state.lastQrData) compose();
   });
   dom.qrSizeSlider?.addEventListener('input', () => {
@@ -1059,7 +1195,7 @@ function bindEvents() {
   // Error correction
   dom.errorCorrection?.addEventListener('change', debouncedGenerate);
   dom.ecRadios.forEach((r) => r.addEventListener('change', () => {
-    if (r.checked) { dom.errorCorrection.value = r.value; debouncedGenerate(); }
+    if (r.checked) { dom.errorCorrection.value = r.value; saveStateToStorage(); debouncedGenerate(); }
   }));
 
   // Logo
@@ -1084,6 +1220,7 @@ function bindEvents() {
     dom.frameCatBar.querySelectorAll('.frame-cat-btn').forEach((b) => {
       b.classList.toggle('active', b.dataset.cat === state.frameCategory);
     });
+    saveStateToStorage();
     renderFrameGrid();
   });
 
@@ -1096,11 +1233,12 @@ function bindEvents() {
   // Frame color
   dom.frameColor?.addEventListener('input', () => {
     if (dom.frameColorHex) dom.frameColorHex.textContent = dom.frameColor.value;
+    saveStateToStorage();
     if (state.lastQrData) compose();
   });
 
   // Frame label
-  dom.frameLabel?.addEventListener('input', () => { if (state.lastQrData) compose(); });
+  dom.frameLabel?.addEventListener('input', () => { saveStateToStorage(); if (state.lastQrData) compose(); });
 
   // Body picker
   dom.bodyPicker?.addEventListener('click', (e) => {
@@ -1121,10 +1259,12 @@ function bindEvents() {
   // Eye colors
   dom.extEyeColor?.addEventListener('input', () => {
     if (dom.extEyeColorHex) dom.extEyeColorHex.textContent = dom.extEyeColor.value;
+    saveStateToStorage();
     if (state.lastQrData) compose();
   });
   dom.intEyeColor?.addEventListener('input', () => {
     if (dom.intEyeColorHex) dom.intEyeColorHex.textContent = dom.intEyeColor.value;
+    saveStateToStorage();
     if (state.lastQrData) compose();
   });
 
@@ -1177,15 +1317,56 @@ function bindEvents() {
 
 // ── Init ──────────────────────────────────────────────────────
 function init() {
+  // Restore persisted state first so pickers render with correct selections
+  const saved = loadStateFromStorage();
+  if (saved) applyStoredState(saved);
+
   renderCategoryBar();
   renderFrameGrid();
   renderBodyPicker();
   renderEyePicker('ext-eye-picker', EXT_EYE_SHAPES, state.selectedExtEye, 'extEye', buildExtEyeThumb);
   renderEyePicker('int-eye-picker', INT_EYE_SHAPES, state.selectedIntEye, 'intEye', buildIntEyeThumb);
+
+  // Restore selected frame UI state after grid is rendered
+  if (state.selectedFrame) {
+    const hasFrame = state.selectedFrame.id !== 'minimal-010';
+    if (dom.frameOptions) dom.frameOptions.classList.toggle('hidden', !hasFrame);
+    if (dom.frameLabelGroup) dom.frameLabelGroup.classList.toggle('hidden', !state.selectedFrame.hasLabel);
+    dom.framePicker.querySelectorAll('.frame-card').forEach((btn) => {
+      const active = btn.dataset.frameId === state.selectedFrame.id;
+      btn.classList.toggle('selected', active);
+      btn.setAttribute('aria-checked', active ? 'true' : 'false');
+    });
+  }
+
+  // Apply saved tab
+  if (saved?.currentType) {
+    switchTab(saved.currentType);
+  }
+
   bindEvents();
   initSupabase();
   updateCharCounter();
-  if (getQrData()) generateQR();
+
+  // Restore logo from storage then generate QR
+  const storedLogo = localStorage.getItem(STORAGE_KEY + '_logo');
+  if (storedLogo) {
+    const img = new Image();
+    img.onload = () => {
+      state.logoImage = img;
+      if (dom.logoFilename) dom.logoFilename.textContent = 'Restored logo';
+      if (dom.btnClearLogo) dom.btnClearLogo.classList.remove('hidden');
+      updateLogoPreview();
+      if (getQrData()) generateQR();
+    };
+    img.onerror = () => {
+      localStorage.removeItem(STORAGE_KEY + '_logo');
+      if (getQrData()) generateQR();
+    };
+    img.src = storedLogo;
+  } else {
+    if (getQrData()) generateQR();
+  }
 }
 
 if (document.readyState === 'loading') {
