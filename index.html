@@ -124,120 +124,36 @@
             </div>
           </div>
 
-          <!-- Customization Panel -->
-          <div class="customization-panel">
-            <h3 class="customization-panel__title">Customization</h3>
+          <!-- Customization Panel with 4 Tabs -->
+          <div class="cust-panel-wrap">
 
-            <div class="custom-grid">
-              <div class="form-group">
-                <label for="fg-color" class="form-label">Foreground</label>
-                <div class="color-input-wrap">
-                  <input type="color" id="fg-color" class="color-input" value="#000000" />
-                  <span class="color-hex" id="fg-hex">#000000</span>
-                </div>
-              </div>
-              <div class="form-group">
-                <label for="bg-color" class="form-label">Background</label>
-                <div class="color-input-wrap">
-                  <input type="color" id="bg-color" class="color-input" value="#ffffff" />
-                  <span class="color-hex" id="bg-hex">#ffffff</span>
-                </div>
-              </div>
+            <!-- Tab Bar -->
+            <div class="cust-tab-bar" role="tablist" aria-label="Customization">
+              <button class="cust-tab cust-tab--active" role="tab" aria-selected="true"  data-cust="frames"  id="ctab-frames">Frames</button>
+              <button class="cust-tab"                 role="tab" aria-selected="false" data-cust="shapes"  id="ctab-shapes">Shapes</button>
+              <button class="cust-tab"                 role="tab" aria-selected="false" data-cust="logo"    id="ctab-logo">Logo</button>
+              <button class="cust-tab"                 role="tab" aria-selected="false" data-cust="level"   id="ctab-level">Level</button>
             </div>
 
-            <div class="form-group">
-              <label for="padding-slider" class="form-label">
-                Padding: <span id="padding-value">10</span>px
-              </label>
-              <input type="range" id="padding-slider" class="range-input" min="0" max="50" value="10" step="1" />
-            </div>
+            <!-- ── TAB: FRAMES ───────────────────────────────── -->
+            <div class="cust-panel" id="cpanel-frames" role="tabpanel" aria-labelledby="ctab-frames">
 
-            <div class="form-group">
-              <label for="logo-upload" class="form-label">Logo Overlay (optional)</label>
-              <div class="file-upload-wrap">
-                <input type="file" id="logo-upload" class="file-input" accept="image/*" />
-                <label for="logo-upload" class="file-upload-label">
-                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                  <span id="logo-filename">Choose image…</span>
-                </label>
-                <button id="btn-clear-logo" class="btn btn--ghost btn--sm hidden" aria-label="Remove logo">Remove</button>
-              </div>
-              <div id="logo-preview-area" class="logo-preview-area"></div>
-            </div>
-
-            <div class="form-group">
-              <label for="qr-size" class="form-label">
-                Size: <span id="size-value">300</span>px
-              </label>
-              <input type="range" id="qr-size" class="range-input" min="128" max="512" value="300" step="8" />
-            </div>
-
-            <div class="form-group">
-              <label for="error-correction" class="form-label">Error Correction</label>
-              <select id="error-correction" class="form-select">
-                <option value="L">Low (7%)</option>
-                <option value="M" selected>Medium (15%)</option>
-                <option value="Q">Quartile (25%)</option>
-                <option value="H">High (30%) — recommended with logo</option>
-              </select>
-            </div>
-
-            <!-- Body Shape Picker -->
-            <div class="form-group">
-              <label class="form-label">Body Shape</label>
-              <div class="frame-picker" id="body-picker" role="radiogroup" aria-label="Body shape">
-                <!-- Body shape options injected by JS -->
-              </div>
-            </div>
-
-            <!-- Eye Shape Pickers -->
-            <div class="eye-pickers-grid">
-              <!-- External Eye -->
-              <div class="form-group">
-                <label class="form-label">External Eye</label>
-                <div class="frame-picker frame-picker--eye" id="ext-eye-picker" role="radiogroup" aria-label="External eye shape">
-                  <!-- Injected by JS -->
+              <!-- QR Colors (always visible at top) -->
+              <div class="custom-grid">
+                <div class="form-group">
+                  <label for="fg-color" class="form-label">QR Color</label>
+                  <div class="color-input-wrap">
+                    <input type="color" id="fg-color" class="color-input" value="#000000" />
+                    <span class="color-hex" id="fg-hex">#000000</span>
+                  </div>
                 </div>
-                <div class="color-input-wrap" style="margin-top:0.5rem">
-                  <input type="color" id="ext-eye-color" class="color-input" value="#000000" />
-                  <span class="color-hex" id="ext-eye-color-hex">#000000</span>
+                <div class="form-group">
+                  <label for="bg-color" class="form-label">Background</label>
+                  <div class="color-input-wrap">
+                    <input type="color" id="bg-color" class="color-input" value="#ffffff" />
+                    <span class="color-hex" id="bg-hex">#ffffff</span>
+                  </div>
                 </div>
-              </div>
-              <!-- Internal Eye -->
-              <div class="form-group">
-                <label class="form-label">Internal Eye</label>
-                <div class="frame-picker frame-picker--eye" id="int-eye-picker" role="radiogroup" aria-label="Internal eye shape">
-                  <!-- Injected by JS -->
-                </div>
-                <div class="color-input-wrap" style="margin-top:0.5rem">
-                  <input type="color" id="int-eye-color" class="color-input" value="#000000" />
-                  <span class="color-hex" id="int-eye-color-hex">#000000</span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Frame Library -->
-            <div class="form-group">
-              <label class="form-label">Frame Style</label>
-
-              <!-- Frame search + category filter -->
-              <div class="frame-search-bar">
-                <div class="frame-search-input-wrap">
-                  <svg class="frame-search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
-                  <input
-                    type="search"
-                    id="frame-search"
-                    class="frame-search-input"
-                    placeholder="Search frames…"
-                    autocomplete="off"
-                    aria-label="Search frames"
-                  />
-                </div>
-              </div>
-
-              <!-- Category filter tabs -->
-              <div class="frame-cat-bar" role="tablist" aria-label="Frame categories" id="frame-cat-bar">
-                <!-- Injected by JS from FRAME_CATEGORIES -->
               </div>
 
               <!-- Contrast warning -->
@@ -246,17 +162,28 @@
                 Low contrast — QR may be difficult to scan.
               </div>
 
+              <!-- Frame search -->
+              <div class="frame-search-bar">
+                <div class="frame-search-input-wrap">
+                  <svg class="frame-search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <input type="search" id="frame-search" class="frame-search-input" placeholder="Search frames…" autocomplete="off" aria-label="Search frames" />
+                </div>
+              </div>
+
+              <!-- Frame category filter -->
+              <div class="frame-cat-bar" role="tablist" aria-label="Frame categories" id="frame-cat-bar">
+                <!-- Injected by JS -->
+              </div>
+
               <!-- Frame grid -->
               <div class="frame-grid" id="frame-picker" role="radiogroup" aria-label="Frame style">
                 <!-- Injected by JS -->
               </div>
-
-              <!-- Empty state for search -->
               <div id="frame-empty" class="frame-empty hidden">
                 <p>No frames found. Try another keyword.</p>
               </div>
 
-              <!-- Frame color + label controls -->
+              <!-- Frame color + label (shown when frame selected) -->
               <div id="frame-options" class="frame-options hidden">
                 <div class="frame-options__row">
                   <div class="form-group">
@@ -272,8 +199,146 @@
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
+
+            </div><!-- /cpanel-frames -->
+
+            <!-- ── TAB: SHAPES ───────────────────────────────── -->
+            <div class="cust-panel hidden" id="cpanel-shapes" role="tabpanel" aria-labelledby="ctab-shapes">
+
+              <!-- Body Shape -->
+              <div class="form-group">
+                <label class="form-label">Body Shape</label>
+                <div class="frame-picker" id="body-picker" role="radiogroup" aria-label="Body shape">
+                  <!-- Injected by JS -->
+                </div>
+              </div>
+
+              <!-- Eye Shapes -->
+              <div class="eye-pickers-grid">
+                <div class="form-group">
+                  <label class="form-label">Outer Eye</label>
+                  <div class="frame-picker frame-picker--eye" id="ext-eye-picker" role="radiogroup" aria-label="External eye shape">
+                    <!-- Injected by JS -->
+                  </div>
+                  <div class="color-input-wrap" style="margin-top:0.5rem">
+                    <input type="color" id="ext-eye-color" class="color-input" value="#000000" />
+                    <span class="color-hex" id="ext-eye-color-hex">#000000</span>
+                  </div>
+                </div>
+                <div class="form-group">
+                  <label class="form-label">Inner Eye</label>
+                  <div class="frame-picker frame-picker--eye" id="int-eye-picker" role="radiogroup" aria-label="Internal eye shape">
+                    <!-- Injected by JS -->
+                  </div>
+                  <div class="color-input-wrap" style="margin-top:0.5rem">
+                    <input type="color" id="int-eye-color" class="color-input" value="#000000" />
+                    <span class="color-hex" id="int-eye-color-hex">#000000</span>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Padding -->
+              <div class="form-group">
+                <label for="padding-slider" class="form-label">
+                  Padding: <span id="padding-value">10</span>px
+                </label>
+                <input type="range" id="padding-slider" class="range-input" min="0" max="50" value="10" step="1" />
+              </div>
+
+              <!-- Size -->
+              <div class="form-group">
+                <label for="qr-size" class="form-label">
+                  QR Size: <span id="size-value">300</span>px
+                </label>
+                <input type="range" id="qr-size" class="range-input" min="128" max="512" value="300" step="8" />
+              </div>
+
+            </div><!-- /cpanel-shapes -->
+
+            <!-- ── TAB: LOGO ──────────────────────────────────── -->
+            <div class="cust-panel hidden" id="cpanel-logo" role="tabpanel" aria-labelledby="ctab-logo">
+
+              <div class="form-group">
+                <label for="logo-upload" class="form-label">Logo Image</label>
+                <div class="file-upload-wrap">
+                  <input type="file" id="logo-upload" class="file-input" accept="image/png,image/jpeg,image/webp,image/svg+xml" />
+                  <label for="logo-upload" class="file-upload-label">
+                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                    <span id="logo-filename">Choose image…</span>
+                  </label>
+                  <button id="btn-clear-logo" class="btn btn--ghost btn--sm hidden" aria-label="Remove logo">Remove</button>
+                </div>
+                <p class="form-hint">Supports PNG, JPG, WEBP, SVG · Max 5 MB</p>
+              </div>
+
+              <div id="logo-preview-area" class="logo-preview-area"></div>
+
+              <!-- Logo size -->
+              <div class="form-group" id="logo-size-group">
+                <label class="form-label">Logo Size</label>
+                <div class="logo-size-options" role="radiogroup" aria-label="Logo size">
+                  <label class="logo-size-option">
+                    <input type="radio" name="logo-size" value="0.10" class="logo-size-radio" /> Small (10%)
+                  </label>
+                  <label class="logo-size-option">
+                    <input type="radio" name="logo-size" value="0.15" class="logo-size-radio" /> Medium (15%)
+                  </label>
+                  <label class="logo-size-option logo-size-option--active">
+                    <input type="radio" name="logo-size" value="0.20" class="logo-size-radio" checked /> Large (20%)
+                  </label>
+                </div>
+              </div>
+
+              <div class="logo-hint">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="1.5"/><path d="M12 8v4m0 4h.01" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+                Use <strong>High</strong> error correction (Level tab) when adding a logo.
+              </div>
+
+            </div><!-- /cpanel-logo -->
+
+            <!-- ── TAB: LEVEL ─────────────────────────────────── -->
+            <div class="cust-panel hidden" id="cpanel-level" role="tabpanel" aria-labelledby="ctab-level">
+
+              <div class="form-group">
+                <label class="form-label">Error Correction Level</label>
+                <div class="ec-options">
+                  <label class="ec-option">
+                    <input type="radio" name="ec-level" value="L" class="ec-radio" />
+                    <span class="ec-option__badge">L</span>
+                    <span class="ec-option__desc"><strong>Low</strong>7% recovery</span>
+                  </label>
+                  <label class="ec-option">
+                    <input type="radio" name="ec-level" value="M" class="ec-radio" checked />
+                    <span class="ec-option__badge">M</span>
+                    <span class="ec-option__desc"><strong>Medium</strong>15% recovery</span>
+                  </label>
+                  <label class="ec-option">
+                    <input type="radio" name="ec-level" value="Q" class="ec-radio" />
+                    <span class="ec-option__badge">Q</span>
+                    <span class="ec-option__desc"><strong>Quartile</strong>25% recovery</span>
+                  </label>
+                  <label class="ec-option ec-option--recommended">
+                    <input type="radio" name="ec-level" value="H" class="ec-radio" />
+                    <span class="ec-option__badge">H</span>
+                    <span class="ec-option__desc"><strong>High</strong>30% — recommended with logo</span>
+                  </label>
+                </div>
+                <!-- Hidden select kept for JS compatibility -->
+                <select id="error-correction" class="hidden" aria-hidden="true">
+                  <option value="L">L</option>
+                  <option value="M" selected>M</option>
+                  <option value="Q">Q</option>
+                  <option value="H">H</option>
+                </select>
+              </div>
+
+              <div class="ec-info">
+                <p>Higher levels make QR codes more resilient to damage but increase visual complexity. Use <strong>H</strong> when adding a logo overlay.</p>
+              </div>
+
+            </div><!-- /cpanel-level -->
+
+          </div><!-- /cust-panel-wrap -->
 
           <!-- Download Section -->
           <div class="download-section">

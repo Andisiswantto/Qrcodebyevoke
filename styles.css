@@ -1560,3 +1560,130 @@ button, input, select, textarea {
   padding-top: 0.4rem;
   padding-bottom: 0.4rem;
 }
+
+/* ============================================================
+   Customization Tab System (Frames / Shapes / Logo / Level)
+   ============================================================ */
+
+/* ── Panel Wrapper ───────────────────────────────────────────── */
+.cust-panel-wrap {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  overflow: hidden;
+}
+
+/* ── Tab Bar ─────────────────────────────────────────────────── */
+.cust-tab-bar {
+  display: flex;
+  background: var(--color-surface-2);
+  border-bottom: 1px solid var(--color-border);
+  padding: var(--space-1);
+  gap: 2px;
+}
+
+.cust-tab {
+  flex: 1;
+  padding: 0.5rem 0.5rem;
+  min-height: 40px;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast),
+              box-shadow var(--transition-fast);
+  white-space: nowrap;
+  user-select: none;
+}
+
+.cust-tab:hover:not(.cust-tab--active) {
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+.cust-tab--active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-weight: 700;
+  box-shadow: var(--shadow-sm);
+}
+
+/* ── Panel Content ───────────────────────────────────────────── */
+.cust-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+  padding: clamp(0.875rem, 3vw, 1.25rem);
+  animation: fade-in var(--transition-base) ease;
+}
+
+/* ── Logo Tab ────────────────────────────────────────────────── */
+.logo-size-options {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+}
+
+.logo-size-option {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 0.45rem 0.875rem;
+  border: 1.5px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast),
+              color var(--transition-fast);
+  user-select: none;
+}
+
+.logo-size-option input { accent-color: var(--color-primary); }
+
+.logo-size-option:has(input:checked),
+.logo-size-option--active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.logo-hint {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background: var(--color-primary-light);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.5;
+}
+
+.logo-hint svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  margin-top: 1px;
+  color: var(--color-primary);
+}
+
+/* ── Level Tab ───────────────────────────────────────────────── */
+.ec-info {
+  padding: var(--space-3);
+  background: var(--color-surface-2);
+  border-radius: var(--radius-md);
+  font-size: var(--text-xs);
+  color: var(--color-text-muted);
+  line-height: 1.6;
+}
+
+.ec-info strong { color: var(--color-text); }

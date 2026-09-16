@@ -332,6 +332,18 @@ const INT_EYE_SHAPES = [
   },
 ];
 
+// ── Customization Tabs ────────────────────────────────────────
+function switchCustTab(tabId) {
+  document.querySelectorAll('.cust-tab').forEach((t) => {
+    const active = t.dataset.cust === tabId;
+    t.classList.toggle('cust-tab--active', active);
+    t.setAttribute('aria-selected', active ? 'true' : 'false');
+  });
+  document.querySelectorAll('.cust-panel').forEach((p) => {
+    p.classList.toggle('hidden', p.id !== `cpanel-${tabId}`);
+  });
+}
+
 // ── Frame Category Bar ────────────────────────────────────────
 function renderCategoryBar() {
   const bar = dom.frameCatBar;
@@ -693,7 +705,7 @@ function compose() {
     frameColor,
     frameLabel,
     logoImage:  state.logoImage,
-    logoSize:   0.20,
+    logoSize:   parseFloat(document.querySelector('.logo-size-radio:checked')?.value || 0.20),
     bodyShape, extEyeShape: extEye, intEyeShape: intEye,
     extEyeColor: extColor,
     intEyeColor: intColor,
@@ -1007,6 +1019,21 @@ function fetchWithTimeout(url, options = {}, ms = 8000) {
 
 // ── Event Bindings ────────────────────────────────────────────
 function bindEvents() {
+  // ── Customization tab bar ───────────────────────────────────
+  document.querySelectorAll('.cust-tab').forEach((tab) => {
+    tab.addEventListener('click', () => switchCustTab(tab.dataset.cust));
+  });
+
+  // ── Logo size radios ────────────────────────────────────────
+  document.querySelectorAll('.logo-size-radio').forEach((radio) => {
+    radio.addEventListener('change', () => {
+      document.querySelectorAll('.logo-size-option').forEach((l) => {
+        l.classList.toggle('logo-size-option--active', l.querySelector('input')?.checked);
+      });
+      if (state.lastQrData) compose();
+    });
+  });
+
   // Input tabs
   dom.tabs.forEach((tab) => tab.addEventListener('click', () => switchTab(tab.dataset.type)));
 
