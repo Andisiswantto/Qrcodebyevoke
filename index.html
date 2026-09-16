@@ -126,201 +126,177 @@
 
           <!-- Customization Panel -->
           <div class="customization-panel">
+            <h3 class="customization-panel__title">Customization</h3>
 
-            <!-- Tab Bar -->
-            <div class="cust-tab-bar">
-              <div class="cust-tabs" role="tablist" aria-label="Customization tabs">
-                <button class="cust-tab cust-tab--active" role="tab" aria-selected="true"  data-cust-tab="frames"  id="ctab-frames"  aria-controls="cpanel-frames">Frames</button>
-                <button class="cust-tab"                  role="tab" aria-selected="false" data-cust-tab="shapes"  id="ctab-shapes"  aria-controls="cpanel-shapes">Shapes</button>
-                <button class="cust-tab"                  role="tab" aria-selected="false" data-cust-tab="logo"    id="ctab-logo"    aria-controls="cpanel-logo">Logo</button>
-                <button class="cust-tab"                  role="tab" aria-selected="false" data-cust-tab="level"   id="ctab-level"   aria-controls="cpanel-level">Level</button>
+            <div class="custom-grid">
+              <div class="form-group">
+                <label for="fg-color" class="form-label">Foreground</label>
+                <div class="color-input-wrap">
+                  <input type="color" id="fg-color" class="color-input" value="#000000" />
+                  <span class="color-hex" id="fg-hex">#000000</span>
+                </div>
               </div>
-              <button id="btn-reset-settings" class="btn-reset-settings" type="button" aria-label="Reset all settings">
-                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M2.5 2v6h6M2.66 15.57a10 10 0 1 0 .57-4.1" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                Reset Settings
-              </button>
+              <div class="form-group">
+                <label for="bg-color" class="form-label">Background</label>
+                <div class="color-input-wrap">
+                  <input type="color" id="bg-color" class="color-input" value="#ffffff" />
+                  <span class="color-hex" id="bg-hex">#ffffff</span>
+                </div>
+              </div>
             </div>
 
-            <!-- ── TAB: FRAMES ──────────────────────────────── -->
-            <div id="cpanel-frames" class="cust-panel" role="tabpanel" aria-labelledby="ctab-frames">
+            <div class="form-group">
+              <label for="padding-slider" class="form-label">
+                Padding: <span id="padding-value">10</span>px
+              </label>
+              <input type="range" id="padding-slider" class="range-input" min="0" max="50" value="10" step="1" />
+            </div>
 
-              <!-- Colors row -->
-              <div class="custom-grid">
-                <div class="form-group">
-                  <label for="fg-color" class="form-label">Foreground</label>
-                  <div class="color-input-wrap">
-                    <input type="color" id="fg-color" class="color-input" value="#000000" />
-                    <span class="color-hex" id="fg-hex">#000000</span>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label for="bg-color" class="form-label">Background</label>
-                  <div class="color-input-wrap">
-                    <input type="color" id="bg-color" class="color-input" value="#ffffff" />
-                    <span class="color-hex" id="bg-hex">#ffffff</span>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Frame picker -->
-              <div class="form-group">
-                <label class="form-label">Frame Style</label>
-                <div class="frame-picker" id="frame-picker" role="radiogroup" aria-label="Frame style">
-                  <!-- injected by JS -->
-                </div>
-                <div id="frame-options" class="frame-options hidden">
-                  <div class="frame-options__row">
-                    <div class="form-group">
-                      <label for="frame-color" class="form-label">Frame Color</label>
-                      <div class="color-input-wrap">
-                        <input type="color" id="frame-color" class="color-input" value="#6366f1" />
-                        <span class="color-hex" id="frame-color-hex">#6366f1</span>
-                      </div>
-                    </div>
-                    <div class="form-group" id="frame-label-group">
-                      <label for="frame-label" class="form-label">Label Text</label>
-                      <input type="text" id="frame-label" class="form-input" placeholder="SCAN ME" maxlength="30" />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <!-- Padding -->
-              <div class="form-group">
-                <label for="padding-slider" class="form-label">
-                  Padding: <span id="padding-value">10</span>px
+            <div class="form-group">
+              <label for="logo-upload" class="form-label">Logo Overlay (optional)</label>
+              <div class="file-upload-wrap">
+                <input type="file" id="logo-upload" class="file-input" accept="image/*" />
+                <label for="logo-upload" class="file-upload-label">
+                  <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                  <span id="logo-filename">Choose image…</span>
                 </label>
-                <input type="range" id="padding-slider" class="range-input" min="0" max="50" value="10" step="1" />
+                <button id="btn-clear-logo" class="btn btn--ghost btn--sm hidden" aria-label="Remove logo">Remove</button>
               </div>
+              <div id="logo-preview-area" class="logo-preview-area"></div>
+            </div>
 
-            </div><!-- /cpanel-frames -->
+            <div class="form-group">
+              <label for="qr-size" class="form-label">
+                Size: <span id="size-value">300</span>px
+              </label>
+              <input type="range" id="qr-size" class="range-input" min="128" max="512" value="300" step="8" />
+            </div>
 
-            <!-- ── TAB: SHAPES ──────────────────────────────── -->
-            <div id="cpanel-shapes" class="cust-panel hidden" role="tabpanel" aria-labelledby="ctab-shapes">
+            <div class="form-group">
+              <label for="error-correction" class="form-label">Error Correction</label>
+              <select id="error-correction" class="form-select">
+                <option value="L">Low (7%)</option>
+                <option value="M" selected>Medium (15%)</option>
+                <option value="Q">Quartile (25%)</option>
+                <option value="H">High (30%) — recommended with logo</option>
+              </select>
+            </div>
 
-              <!-- Body Shape -->
+            <!-- Body Shape Picker -->
+            <div class="form-group">
+              <label class="form-label">Body Shape</label>
+              <div class="frame-picker" id="body-picker" role="radiogroup" aria-label="Body shape">
+                <!-- Body shape options injected by JS -->
+              </div>
+            </div>
+
+            <!-- Eye Shape Pickers -->
+            <div class="eye-pickers-grid">
+              <!-- External Eye -->
               <div class="form-group">
-                <label class="form-label">Body Shape</label>
-                <div class="frame-picker" id="body-picker" role="radiogroup" aria-label="Body shape">
-                  <!-- injected by JS -->
+                <label class="form-label">External Eye</label>
+                <div class="frame-picker frame-picker--eye" id="ext-eye-picker" role="radiogroup" aria-label="External eye shape">
+                  <!-- Injected by JS -->
+                </div>
+                <div class="color-input-wrap" style="margin-top:0.5rem">
+                  <input type="color" id="ext-eye-color" class="color-input" value="#000000" />
+                  <span class="color-hex" id="ext-eye-color-hex">#000000</span>
                 </div>
               </div>
-
-              <!-- Eye Shapes side by side -->
-              <div class="eye-pickers-grid">
-                <div class="form-group">
-                  <label class="form-label">External Eye</label>
-                  <div class="frame-picker frame-picker--eye" id="ext-eye-picker" role="radiogroup" aria-label="External eye shape">
-                    <!-- injected by JS -->
-                  </div>
-                  <div class="color-input-wrap" style="margin-top:0.5rem">
-                    <input type="color" id="ext-eye-color" class="color-input" value="#000000" />
-                    <span class="color-hex" id="ext-eye-color-hex">#000000</span>
-                  </div>
-                </div>
-                <div class="form-group">
-                  <label class="form-label">Internal Eye</label>
-                  <div class="frame-picker frame-picker--eye" id="int-eye-picker" role="radiogroup" aria-label="Internal eye shape">
-                    <!-- injected by JS -->
-                  </div>
-                  <div class="color-input-wrap" style="margin-top:0.5rem">
-                    <input type="color" id="int-eye-color" class="color-input" value="#000000" />
-                    <span class="color-hex" id="int-eye-color-hex">#000000</span>
-                  </div>
-                </div>
-              </div>
-
-            </div><!-- /cpanel-shapes -->
-
-            <!-- ── TAB: LOGO ─────────────────────────────────── -->
-            <div id="cpanel-logo" class="cust-panel hidden" role="tabpanel" aria-labelledby="ctab-logo">
-
+              <!-- Internal Eye -->
               <div class="form-group">
-                <label for="logo-upload" class="form-label">Logo Overlay (optional)</label>
-                <div class="file-upload-wrap">
-                  <input type="file" id="logo-upload" class="file-input" accept="image/*" />
-                  <label for="logo-upload" class="file-upload-label">
-                    <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M17 8l-5-5-5 5M12 3v12" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-                    <span id="logo-filename">Choose image…</span>
-                  </label>
-                  <button id="btn-clear-logo" class="btn btn--ghost btn--sm hidden" aria-label="Remove logo">Remove</button>
+                <label class="form-label">Internal Eye</label>
+                <div class="frame-picker frame-picker--eye" id="int-eye-picker" role="radiogroup" aria-label="Internal eye shape">
+                  <!-- Injected by JS -->
                 </div>
-                <p class="form-hint">PNG or SVG recommended. Max 2 MB. Use high error correction with logos.</p>
-              </div>
-
-              <div class="logo-preview-area" id="logo-preview-area" aria-live="polite"></div>
-
-            </div><!-- /cpanel-logo -->
-
-            <!-- ── TAB: LEVEL ─────────────────────────────────── -->
-            <div id="cpanel-level" class="cust-panel hidden" role="tabpanel" aria-labelledby="ctab-level">
-
-              <div class="form-group">
-                <label for="qr-size" class="form-label">
-                  Size: <span id="size-value">300</span>px
-                </label>
-                <input type="range" id="qr-size" class="range-input" min="128" max="512" value="300" step="8" />
-              </div>
-
-              <div class="form-group">
-                <label for="error-correction" class="form-label">Error Correction Level</label>
-                <div class="ec-options" role="radiogroup" aria-label="Error correction level">
-                  <label class="ec-option">
-                    <input type="radio" name="ec-level" value="L" class="ec-radio" />
-                    <span class="ec-option__badge">L</span>
-                    <span class="ec-option__desc">
-                      <strong>Low</strong>
-                      <span>7% recovery</span>
-                    </span>
-                  </label>
-                  <label class="ec-option">
-                    <input type="radio" name="ec-level" value="M" class="ec-radio" checked />
-                    <span class="ec-option__badge">M</span>
-                    <span class="ec-option__desc">
-                      <strong>Medium</strong>
-                      <span>15% recovery</span>
-                    </span>
-                  </label>
-                  <label class="ec-option">
-                    <input type="radio" name="ec-level" value="Q" class="ec-radio" />
-                    <span class="ec-option__badge">Q</span>
-                    <span class="ec-option__desc">
-                      <strong>Quartile</strong>
-                      <span>25% recovery</span>
-                    </span>
-                  </label>
-                  <label class="ec-option ec-option--recommended">
-                    <input type="radio" name="ec-level" value="H" class="ec-radio" />
-                    <span class="ec-option__badge">H</span>
-                    <span class="ec-option__desc">
-                      <strong>High</strong>
-                      <span>30% — use with logo</span>
-                    </span>
-                  </label>
+                <div class="color-input-wrap" style="margin-top:0.5rem">
+                  <input type="color" id="int-eye-color" class="color-input" value="#000000" />
+                  <span class="color-hex" id="int-eye-color-hex">#000000</span>
                 </div>
-                <!-- Hidden select kept for JS compatibility -->
-                <select id="error-correction" class="hidden" aria-hidden="true">
-                  <option value="L">Low</option>
-                  <option value="M" selected>Medium</option>
-                  <option value="Q">Quartile</option>
-                  <option value="H">High</option>
-                </select>
+              </div>
+            </div>
+
+            <!-- Frame Library -->
+            <div class="form-group">
+              <label class="form-label">Frame Style</label>
+
+              <!-- Frame search + category filter -->
+              <div class="frame-search-bar">
+                <div class="frame-search-input-wrap">
+                  <svg class="frame-search-icon" viewBox="0 0 24 24" fill="none" aria-hidden="true"><circle cx="11" cy="11" r="8" stroke="currentColor" stroke-width="2"/><path d="M21 21l-4.35-4.35" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+                  <input
+                    type="search"
+                    id="frame-search"
+                    class="frame-search-input"
+                    placeholder="Search frames…"
+                    autocomplete="off"
+                    aria-label="Search frames"
+                  />
+                </div>
               </div>
 
-            </div><!-- /cpanel-level -->
+              <!-- Category filter tabs -->
+              <div class="frame-cat-bar" role="tablist" aria-label="Frame categories" id="frame-cat-bar">
+                <!-- Injected by JS from FRAME_CATEGORIES -->
+              </div>
 
-          </div><!-- /customization-panel -->
+              <!-- Contrast warning -->
+              <div id="contrast-warning" class="contrast-warning hidden" role="alert">
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M12 9v4m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Low contrast — QR may be difficult to scan.
+              </div>
 
-          <!-- Download Buttons -->
-          <div class="download-actions">
-            <button id="btn-download-png" class="btn btn--primary" disabled>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Download PNG
-            </button>
-            <button id="btn-download-svg" class="btn btn--outline" disabled>
-              <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
-              Download SVG
-            </button>
+              <!-- Frame grid -->
+              <div class="frame-grid" id="frame-picker" role="radiogroup" aria-label="Frame style">
+                <!-- Injected by JS -->
+              </div>
+
+              <!-- Empty state for search -->
+              <div id="frame-empty" class="frame-empty hidden">
+                <p>No frames found. Try another keyword.</p>
+              </div>
+
+              <!-- Frame color + label controls -->
+              <div id="frame-options" class="frame-options hidden">
+                <div class="frame-options__row">
+                  <div class="form-group">
+                    <label for="frame-color" class="form-label">Frame Color</label>
+                    <div class="color-input-wrap">
+                      <input type="color" id="frame-color" class="color-input" value="#6366f1" />
+                      <span class="color-hex" id="frame-color-hex">#6366f1</span>
+                    </div>
+                  </div>
+                  <div class="form-group" id="frame-label-group">
+                    <label for="frame-label" class="form-label">Label Text</label>
+                    <input type="text" id="frame-label" class="form-input" placeholder="SCAN ME" maxlength="40" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Download Section -->
+          <div class="download-section">
+            <div class="download-resolution">
+              <label for="png-resolution" class="form-label">Export Size</label>
+              <select id="png-resolution" class="form-select form-select--sm">
+                <option value="512">512 × 512</option>
+                <option value="1024">1024 × 1024</option>
+                <option value="2000" selected>2000 × 2000 (default)</option>
+                <option value="3000">3000 × 3000</option>
+                <option value="4000">4000 × 4000</option>
+              </select>
+            </div>
+            <div class="download-actions">
+              <button id="btn-download-png" class="btn btn--primary" disabled>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Download PNG
+              </button>
+              <button id="btn-download-svg" class="btn btn--outline" disabled>
+                <svg viewBox="0 0 24 24" fill="none" aria-hidden="true"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4M7 10l5 5 5-5M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+                Download SVG
+              </button>
+            </div>
           </div>
         </section>
 
@@ -440,6 +416,8 @@
     const SUPABASE_ANON_KEY = 'sb_publishable_b6I9L5mg1cgSI0V702nbZQ_dpgMT_8j'
     const WORKER_URL = 'https://qr-code-generator-api.andisis409.workers.dev'
   </script>
+  <script src="frames.js"></script>
+  <script src="qr-composer.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
