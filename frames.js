@@ -522,7 +522,7 @@ const FRAMES = [
   },
 
   // ════════════════════════════════════════════════════════════
-  // CREATIVE (5 frames)
+  // CREATIVE (10 frames)
   // ════════════════════════════════════════════════════════════
 
   {
@@ -669,8 +669,142 @@ const FRAMES = [
     },
   },
 
+  {
+    id: 'creative-006',
+    name: 'Bubble Frame',
+    category: 'creative',
+    tags: ['creative', 'bubble', 'fun', 'playful'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'SCAN ME!',
+    canvasRatio: 1 / 1.15,
+    qrArea: { x: 0.08, y: 0.08, w: 0.84, h: 0.76 },
+    draw(ctx, W, H, color, label) {
+      // Bubbles around border
+      const bubbles = [
+        [0.08, 0.04], [0.25, 0.02], [0.5, 0.03], [0.75, 0.02], [0.92, 0.04],
+        [0.97, 0.2],  [0.97, 0.5],  [0.97, 0.78],
+        [0.92, 0.95], [0.75, 0.97], [0.5, 0.96], [0.25, 0.97], [0.08, 0.95],
+        [0.03, 0.78], [0.03, 0.5],  [0.03, 0.2],
+      ];
+      bubbles.forEach(([fx, fy], i) => {
+        const r = W * (0.025 + (i % 3) * 0.008);
+        ctx.fillStyle = color + (i % 2 === 0 ? 'dd' : '88');
+        ctx.beginPath(); ctx.arc(W*fx, H*fy, r, 0, Math.PI*2); ctx.fill();
+      });
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.011;
+      drawRoundRect(ctx, W*0.04, H*0.04, W*0.92, H*0.84, W*0.04); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.925, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'creative-007',
+    name: 'Zigzag Edge',
+    category: 'creative',
+    tags: ['creative', 'zigzag', 'pattern', 'dynamic'],
+    featured: false, isNew: false, hasLabel: false,
+    canvasRatio: 1,
+    qrArea: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 },
+    draw(ctx, W, H, color) {
+      const teeth = 10, tw = W / teeth, th = H * 0.045;
+      ctx.fillStyle = color;
+      // top zigzag
+      ctx.beginPath(); ctx.moveTo(0, th);
+      for (let i = 0; i < teeth; i++) {
+        ctx.lineTo(tw * i + tw / 2, 0);
+        ctx.lineTo(tw * (i + 1), th);
+      }
+      ctx.lineTo(W, 0); ctx.lineTo(0, 0); ctx.closePath(); ctx.fill();
+      // bottom zigzag
+      ctx.beginPath(); ctx.moveTo(0, H - th);
+      for (let i = 0; i < teeth; i++) {
+        ctx.lineTo(tw * i + tw / 2, H);
+        ctx.lineTo(tw * (i + 1), H - th);
+      }
+      ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath(); ctx.fill();
+    },
+  },
+
+  {
+    id: 'creative-008',
+    name: 'Camera Frame',
+    category: 'creative',
+    tags: ['creative', 'camera', 'photo', 'scan'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'SNAP & SCAN',
+    canvasRatio: 1 / 1.15,
+    qrArea: { x: 0.08, y: 0.12, w: 0.84, h: 0.72 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.05, bw = W * 0.013;
+      // Camera body
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, H*0.06, W-bw, H*0.88, r); ctx.stroke();
+      // Lens ring top
+      const lensW = W * 0.45, lensH = H * 0.06;
+      ctx.fillStyle = color;
+      drawRoundRect(ctx, (W - lensW)/2, H*0.025, lensW, lensH, lensH*0.4); ctx.fill();
+      // Shutter button
+      ctx.fillStyle = color + '99';
+      ctx.beginPath(); ctx.arc(W * 0.82, H * 0.09, W*0.04, 0, Math.PI*2); ctx.fill();
+      ctx.strokeStyle = color; ctx.lineWidth = bw * 0.7;
+      ctx.beginPath(); ctx.arc(W * 0.82, H * 0.09, W*0.04, 0, Math.PI*2); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.93, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'creative-009',
+    name: 'Paw Corners',
+    category: 'creative',
+    tags: ['creative', 'paw', 'pet', 'animal', 'cute'],
+    featured: false, isNew: true, hasLabel: false,
+    canvasRatio: 1,
+    qrArea: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 },
+    draw(ctx, W, H, color) {
+      const drawPaw = (cx, cy, sz) => {
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(cx, cy, sz, 0, Math.PI*2); ctx.fill();
+        const toes = [[-sz*1.3,-sz*1.5],[0,-sz*1.8],[sz*1.3,-sz*1.5]];
+        toes.forEach(([dx, dy]) => {
+          ctx.beginPath(); ctx.arc(cx+dx, cy+dy, sz*0.7, 0, Math.PI*2); ctx.fill();
+        });
+      };
+      const s = W * 0.05;
+      drawPaw(s*1.5, s*1.5, s); drawPaw(W-s*1.5, s*1.5, s);
+      drawPaw(s*1.5, H-s*1.5, s); drawPaw(W-s*1.5, H-s*1.5, s);
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.011;
+      drawRoundRect(ctx, W*0.045, H*0.045, W*0.91, H*0.91, W*0.03); ctx.stroke();
+    },
+  },
+
+  {
+    id: 'creative-010',
+    name: 'Neon Glow',
+    category: 'creative',
+    tags: ['creative', 'neon', 'glow', 'vibrant'],
+    featured: true, isNew: true, hasLabel: true,
+    defaultLabel: 'SCAN ME',
+    canvasRatio: 1,
+    qrArea: { x: 0.08, y: 0.08, w: 0.84, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      // Outer glow layers
+      for (let i = 4; i >= 1; i--) {
+        ctx.strokeStyle = color + Math.floor(255 * 0.12 * i).toString(16).padStart(2,'0');
+        ctx.lineWidth = W * 0.008 * i * 2;
+        ctx.shadowBlur = 0;
+        drawRoundRect(ctx, W*0.03, H*0.03, W*0.94, H*0.94, W*0.04);
+        ctx.stroke();
+      }
+      ctx.strokeStyle = color;
+      ctx.lineWidth = W * 0.012;
+      drawRoundRect(ctx, W*0.03, H*0.03, W*0.94, H*0.94, W*0.04);
+      ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.058, color);
+    },
+  },
+
   // ════════════════════════════════════════════════════════════
-  // ELEGANT (5 frames)
+  // ELEGANT (10 frames)
   // ════════════════════════════════════════════════════════════
 
   {
@@ -779,8 +913,154 @@ const FRAMES = [
     },
   },
 
+  {
+    id: 'elegant-006',
+    name: 'Lace Border',
+    category: 'elegant',
+    tags: ['elegant', 'lace', 'wedding', 'delicate'],
+    featured: false, isNew: false, hasLabel: false,
+    canvasRatio: 1,
+    qrArea: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 },
+    draw(ctx, W, H, color) {
+      const n = 16, r = W * 0.035;
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.007;
+      // outer rect
+      drawRoundRect(ctx, W*0.025, H*0.025, W*0.95, H*0.95, W*0.02); ctx.stroke();
+      // decorative circles along border
+      for (let i = 0; i < n; i++) {
+        const t = i / n;
+        let x, y;
+        if (t < 0.25)      { x = W*0.025 + (t/0.25)*W*0.95; y = H*0.025; }
+        else if (t < 0.5)  { x = W*0.975; y = H*0.025 + ((t-0.25)/0.25)*H*0.95; }
+        else if (t < 0.75) { x = W*0.975 - ((t-0.5)/0.25)*W*0.95; y = H*0.975; }
+        else               { x = W*0.025; y = H*0.975 - ((t-0.75)/0.25)*H*0.95; }
+        ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI*2); ctx.stroke();
+      }
+    },
+  },
+
+  {
+    id: 'elegant-007',
+    name: 'Wreath Frame',
+    category: 'elegant',
+    tags: ['elegant', 'wreath', 'floral', 'organic'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'SCAN TO VIEW',
+    canvasRatio: 1,
+    qrArea: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 },
+    draw(ctx, W, H, color, label) {
+      // Draw leaf/oval shapes in a ring
+      const leaves = 24;
+      ctx.fillStyle = color + 'cc';
+      for (let i = 0; i < leaves; i++) {
+        const a = (i / leaves) * Math.PI * 2;
+        const d = W * 0.44;
+        const cx = W/2 + Math.cos(a) * d;
+        const cy = H/2 + Math.sin(a) * d;
+        ctx.save();
+        ctx.translate(cx, cy);
+        ctx.rotate(a + Math.PI/2);
+        ctx.beginPath();
+        ctx.ellipse(0, 0, W*0.025, W*0.055, 0, 0, Math.PI*2);
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.006;
+      ctx.beginPath(); ctx.arc(W/2, H/2, W*0.38, 0, Math.PI*2); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.94, W * 0.055, color);
+    },
+  },
+
+  {
+    id: 'elegant-008',
+    name: 'Filigree',
+    category: 'elegant',
+    tags: ['elegant', 'filigree', 'ornate', 'luxury'],
+    featured: false, isNew: false, hasLabel: false,
+    canvasRatio: 1,
+    qrArea: { x: 0.09, y: 0.09, w: 0.82, h: 0.82 },
+    draw(ctx, W, H, color) {
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.008;
+      // Main border
+      drawRoundRect(ctx, W*0.03, H*0.03, W*0.94, H*0.94, W*0.015); ctx.stroke();
+      // Corner swirls
+      const corners = [[W*0.06,H*0.06],[W*0.94,H*0.06],[W*0.06,H*0.94],[W*0.94,H*0.94]];
+      const dirs = [[1,1],[-1,1],[1,-1],[-1,-1]];
+      corners.forEach(([cx,cy], idx) => {
+        const [dx, dy] = dirs[idx];
+        ctx.beginPath();
+        ctx.arc(cx, cy, W*0.04, 0, Math.PI*1.5); ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx + dx*W*0.04, cy, W*0.025, Math.PI, 0); ctx.stroke();
+        ctx.beginPath();
+        ctx.arc(cx, cy + dy*H*0.04, W*0.025, Math.PI*0.5, -Math.PI*0.5); ctx.stroke();
+      });
+    },
+  },
+
+  {
+    id: 'elegant-009',
+    name: 'Pearl Border',
+    category: 'elegant',
+    tags: ['elegant', 'pearl', 'beads', 'luxury'],
+    featured: false, isNew: false, hasLabel: false,
+    canvasRatio: 1,
+    qrArea: { x: 0.09, y: 0.09, w: 0.82, h: 0.82 },
+    draw(ctx, W, H, color) {
+      const n = 32, pr = W * 0.022;
+      // Pearl dots along a rounded rect path
+      for (let i = 0; i < n; i++) {
+        const t = i / n;
+        let x, y;
+        if (t < 0.25)      { x = W*0.04 + (t/0.25)*(W*0.92); y = H*0.04; }
+        else if (t < 0.5)  { x = W*0.96; y = H*0.04 + ((t-0.25)/0.25)*H*0.92; }
+        else if (t < 0.75) { x = W*0.96 - ((t-0.5)/0.25)*W*0.92; y = H*0.96; }
+        else               { x = W*0.04; y = H*0.96 - ((t-0.75)/0.25)*H*0.92; }
+        // Pearl shading
+        const grad = ctx.createRadialGradient(x-pr*0.3, y-pr*0.3, pr*0.1, x, y, pr);
+        grad.addColorStop(0, '#ffffff');
+        grad.addColorStop(0.4, color + 'cc');
+        grad.addColorStop(1, color);
+        ctx.fillStyle = grad;
+        ctx.beginPath(); ctx.arc(x, y, pr, 0, Math.PI*2); ctx.fill();
+      }
+    },
+  },
+
+  {
+    id: 'elegant-010',
+    name: 'Art Deco',
+    category: 'elegant',
+    tags: ['elegant', 'art deco', 'geometric', 'vintage'],
+    featured: true, isNew: true, hasLabel: true,
+    defaultLabel: 'SCAN ME',
+    canvasRatio: 1 / 1.15,
+    qrArea: { x: 0.1, y: 0.1, w: 0.8, h: 0.75 },
+    draw(ctx, W, H, color, label) {
+      ctx.strokeStyle = color;
+      // Outer frame
+      ctx.lineWidth = W * 0.018;
+      drawRoundRect(ctx, W*0.01, H*0.01, W*0.98, H*0.98, 0); ctx.stroke();
+      // Inner frame
+      ctx.lineWidth = W * 0.007;
+      drawRoundRect(ctx, W*0.045, H*0.045, W*0.91, H*0.87, 0); ctx.stroke();
+      // Art deco fan lines at top corners
+      [[W*0.05, H*0.05], [W*0.95, H*0.05]].forEach(([cx, cy], idx) => {
+        for (let i = 0; i < 5; i++) {
+          const a = (idx === 0 ? 0 : Math.PI) + (i - 2) * 0.22;
+          ctx.lineWidth = W * 0.006;
+          ctx.beginPath();
+          ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a) * W * 0.12, cy + Math.sin(a) * H * 0.12);
+          ctx.stroke();
+        }
+      });
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.06, color);
+    },
+  },
+
   // ════════════════════════════════════════════════════════════
-  // BUSINESS (5 frames)
+  // BUSINESS (10 frames)
   // ════════════════════════════════════════════════════════════
 
   {
@@ -906,8 +1186,173 @@ const FRAMES = [
     },
   },
 
+  {
+    id: 'business-006',
+    name: 'Price Tag',
+    category: 'business',
+    tags: ['business', 'price', 'tag', 'retail', 'shop'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'SCAN FOR PRICE',
+    canvasRatio: 1 / 1.2,
+    qrArea: { x: 0.06, y: 0.12, w: 0.88, h: 0.75 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.04, bw = W * 0.012;
+      // Tag shape with notch at top
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      // Hole punch
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      ctx.beginPath(); ctx.arc(W/2, H*0.065, W*0.038, 0, Math.PI*2); ctx.stroke();
+      // String lines
+      ctx.lineWidth = bw * 0.5; ctx.setLineDash([W*0.02, W*0.015]);
+      ctx.beginPath(); ctx.moveTo(W*0.35, H*0.065); ctx.lineTo(W*0.18, H*0.065); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W*0.65, H*0.065); ctx.lineTo(W*0.82, H*0.065); ctx.stroke();
+      ctx.setLineDash([]);
+      // Top color band
+      ctx.fillStyle = color + '22';
+      drawRoundRect(ctx, bw, bw, W-bw*2, H*0.1, [r, r, 0, 0]); ctx.fill();
+      if (label) labelInBanner(ctx, label, W/2, H*0.055, W * 0.052, color);
+    },
+  },
+
+  {
+    id: 'business-007',
+    name: 'Receipt Frame',
+    category: 'business',
+    tags: ['business', 'receipt', 'payment', 'checkout'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'SCAN TO PAY',
+    canvasRatio: 0.72,
+    qrArea: { x: 0.08, y: 0.08, w: 0.84, h: 0.65 },
+    draw(ctx, W, H, color, label) {
+      const bw = W * 0.013;
+      // Straight sides
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      ctx.strokeRect(bw/2, bw/2, W-bw, H-bw);
+      // Tear-line dashes
+      const divY = H * 0.78;
+      ctx.setLineDash([W*0.04, W*0.02]);
+      ctx.beginPath(); ctx.moveTo(bw*2, divY); ctx.lineTo(W-bw*2, divY); ctx.stroke();
+      ctx.setLineDash([]);
+      // Notch circles on sides
+      [0, W].forEach((x) => {
+        ctx.fillStyle = ctx._bgColor || '#ffffff';
+        ctx.strokeStyle = color; ctx.lineWidth = bw;
+        ctx.beginPath(); ctx.arc(x, divY, W*0.04, 0, Math.PI*2);
+        ctx.fill(); ctx.stroke();
+      });
+      // Scan line icons at bottom
+      const lineY = divY + (H - divY) / 2;
+      ctx.strokeStyle = color + 'aa'; ctx.lineWidth = bw * 0.6;
+      for (let i = 0; i < 4; i++) {
+        const lx = W*0.15 + i*W*0.18;
+        ctx.beginPath(); ctx.moveTo(lx, lineY - H*0.06); ctx.lineTo(lx, lineY + H*0.06); ctx.stroke();
+      }
+      if (label) labelInBanner(ctx, label, W/2, lineY, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'business-008',
+    name: 'Folder Tab',
+    category: 'business',
+    tags: ['business', 'folder', 'file', 'document'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'OPEN FILE',
+    canvasRatio: 1.1,
+    qrArea: { x: 0.04, y: 0.14, w: 0.92, h: 0.81 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.04, bw = W * 0.012;
+      const tabW = W * 0.42, tabH = H * 0.12;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      // Folder tab
+      ctx.beginPath();
+      ctx.moveTo(W*0.04, tabH);
+      ctx.lineTo(W*0.04, r);
+      ctx.arcTo(W*0.04, bw, W*0.04+r, bw, r);
+      ctx.lineTo(W*0.04+tabW-r, bw);
+      ctx.arcTo(W*0.04+tabW, bw, W*0.04+tabW, tabH, r);
+      ctx.lineTo(W-bw, tabH);
+      ctx.lineTo(W-bw, H-bw);
+      ctx.arcTo(W-bw, H-bw, W-bw-r, H-bw, r);
+      ctx.lineTo(r+bw, H-bw);
+      ctx.arcTo(bw, H-bw, bw, H-bw-r, r);
+      ctx.lineTo(bw, tabH);
+      ctx.closePath();
+      ctx.stroke();
+      // Fill tab
+      ctx.fillStyle = color + '20';
+      ctx.beginPath();
+      ctx.moveTo(W*0.04, tabH);
+      ctx.lineTo(W*0.04, r);
+      ctx.arcTo(W*0.04, bw, W*0.04+r, bw, r);
+      ctx.lineTo(W*0.04+tabW-r, bw);
+      ctx.arcTo(W*0.04+tabW, bw, W*0.04+tabW, tabH, r);
+      ctx.closePath();
+      ctx.fill();
+      if (label) labelInBanner(ctx, label, W*0.04+tabW/2, tabH/2, W * 0.052, color);
+    },
+  },
+
+  {
+    id: 'business-009',
+    name: 'Minimal Logo',
+    category: 'business',
+    tags: ['business', 'logo', 'brand', 'top', 'label'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'YOUR BRAND',
+    canvasRatio: 1 / 1.18,
+    qrArea: { x: 0.05, y: 0.18, w: 0.9, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const bw = W * 0.01;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, W*0.03); ctx.stroke();
+      // Top divider line
+      ctx.lineWidth = bw * 0.7;
+      ctx.beginPath(); ctx.moveTo(W*0.08, H*0.155); ctx.lineTo(W*0.92, H*0.155); ctx.stroke();
+      // Brand name at top
+      if (label) {
+        ctx.fillStyle = color;
+        ctx.font = `bold ${W * 0.072}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(label, W/2, H * 0.08);
+      }
+    },
+  },
+
+  {
+    id: 'business-010',
+    name: 'Stats Panel',
+    category: 'business',
+    tags: ['business', 'stats', 'data', 'analytics'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'SCAN FOR DATA',
+    canvasRatio: 1.4,
+    qrArea: { x: 0.04, y: 0.06, w: 0.56, h: 0.88 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.03, bw = W * 0.008;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      // Vertical divider
+      const divX = W * 0.62;
+      ctx.beginPath(); ctx.moveTo(divX, H*0.08); ctx.lineTo(divX, H*0.92); ctx.stroke();
+      // Bar chart on right side
+      const bars = [0.5, 0.8, 0.35, 0.65, 0.9];
+      const barW = (W - divX - W*0.06) / bars.length * 0.6;
+      const chartH = H * 0.55, chartY = H * 0.35;
+      ctx.fillStyle = color;
+      bars.forEach((val, i) => {
+        const bx = divX + W*0.04 + i * (barW / 0.6);
+        const bh = chartH * val;
+        drawRoundRect(ctx, bx, chartY + chartH - bh, barW, bh, barW*0.2);
+        ctx.fill();
+      });
+      if (label) labelInBanner(ctx, label, divX + (W - divX)/2, H * 0.12, W * 0.042, color);
+    },
+  },
+
   // ════════════════════════════════════════════════════════════
-  // EVENT (5 frames)
+  // EVENT (10 frames)
   // ════════════════════════════════════════════════════════════
 
   {
@@ -1037,8 +1482,157 @@ const FRAMES = [
     },
   },
 
+  {
+    id: 'event-006',
+    name: 'Stage Spotlight',
+    category: 'event',
+    tags: ['event', 'stage', 'spotlight', 'performance'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'ON STAGE',
+    canvasRatio: 1,
+    qrArea: { x: 0.09, y: 0.09, w: 0.82, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      // Spotlight cone from top
+      const grad = ctx.createLinearGradient(W/2, 0, W/2, H);
+      grad.addColorStop(0, color + '33');
+      grad.addColorStop(0.6, color + '08');
+      grad.addColorStop(1, 'transparent');
+      ctx.fillStyle = grad;
+      ctx.beginPath();
+      ctx.moveTo(W*0.35, 0); ctx.lineTo(W*0.65, 0);
+      ctx.lineTo(W*0.9, H*0.8); ctx.lineTo(W*0.1, H*0.8);
+      ctx.closePath(); ctx.fill();
+      // Frame border
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.014;
+      drawRoundRect(ctx, W*0.03, H*0.03, W*0.94, H*0.88, W*0.03); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'event-007',
+    name: 'Countdown',
+    category: 'event',
+    tags: ['event', 'countdown', 'launch', 'timer'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'SCAN TO JOIN',
+    canvasRatio: 1 / 1.25,
+    qrArea: { x: 0.06, y: 0.06, w: 0.88, h: 0.72 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.04, bw = W * 0.013;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      // Progress bar at bottom
+      const barY = H * 0.8, barH = H * 0.055;
+      ctx.fillStyle = color + '22';
+      drawRoundRect(ctx, W*0.06, barY, W*0.88, barH, barH/2); ctx.fill();
+      ctx.fillStyle = color;
+      drawRoundRect(ctx, W*0.06, barY, W*0.55, barH, barH/2); ctx.fill();
+      // Tick marks above bar
+      for (let i = 0; i <= 5; i++) {
+        const tx = W*0.06 + i * (W*0.88/5);
+        ctx.strokeStyle = color + '66'; ctx.lineWidth = bw * 0.5;
+        ctx.beginPath(); ctx.moveTo(tx, barY - barH*0.3); ctx.lineTo(tx, barY); ctx.stroke();
+      }
+      if (label) labelInBanner(ctx, label, W/2, H * 0.915, W * 0.057, color);
+    },
+  },
+
+  {
+    id: 'event-008',
+    name: 'Wristband',
+    category: 'event',
+    tags: ['event', 'wristband', 'vip', 'access'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'VIP ACCESS',
+    canvasRatio: 2.5,
+    qrArea: { x: 0.38, y: 0.06, w: 0.3, h: 0.88 },
+    draw(ctx, W, H, color, label) {
+      const r = H * 0.45, bw = W * 0.006;
+      // Wristband shape
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      // Color band on left
+      ctx.fillStyle = color;
+      drawRoundRect(ctx, bw, bw, W*0.34, H-bw*2, [r, 0, 0, r]); ctx.fill();
+      // Text on left
+      ctx.save();
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${H * 0.28}px -apple-system, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.translate(W * 0.17, H / 2);
+      ctx.rotate(-Math.PI / 2);
+      ctx.fillText(label || 'VIP ACCESS', 0, 0);
+      ctx.restore();
+      // Divider dashes
+      ctx.strokeStyle = color + '55'; ctx.lineWidth = bw * 0.5;
+      ctx.setLineDash([H*0.06, H*0.04]);
+      ctx.beginPath(); ctx.moveTo(W*0.36, H*0.1); ctx.lineTo(W*0.36, H*0.9); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W*0.7, H*0.1); ctx.lineTo(W*0.7, H*0.9); ctx.stroke();
+      ctx.setLineDash([]);
+    },
+  },
+
+  {
+    id: 'event-009',
+    name: 'Invitation Card',
+    category: 'event',
+    tags: ['event', 'invitation', 'card', 'formal'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'YOU\'RE INVITED',
+    canvasRatio: 1 / 1.4,
+    qrArea: { x: 0.1, y: 0.25, w: 0.8, h: 0.65 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.035, bw = W * 0.012;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      ctx.lineWidth = bw * 0.5;
+      drawRoundRect(ctx, W*0.03, H*0.025, W*0.94, H*0.955, r*0.7); ctx.stroke();
+      // Envelope flap triangle at top
+      ctx.fillStyle = color + '20';
+      ctx.beginPath();
+      ctx.moveTo(W*0.035, H*0.025);
+      ctx.lineTo(W*0.965, H*0.025);
+      ctx.lineTo(W/2, H*0.21);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = color; ctx.lineWidth = bw * 0.5;
+      ctx.beginPath();
+      ctx.moveTo(W*0.035, H*0.025);
+      ctx.lineTo(W/2, H*0.21);
+      ctx.lineTo(W*0.965, H*0.025);
+      ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.13, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'event-010',
+    name: 'Nametag',
+    category: 'event',
+    tags: ['event', 'nametag', 'hello', 'conference'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'HELLO!',
+    canvasRatio: 0.85,
+    qrArea: { x: 0.08, y: 0.36, w: 0.84, h: 0.55 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.06, bw = W * 0.014;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      // Top colored zone
+      ctx.fillStyle = color;
+      drawRoundRect(ctx, bw, bw, W-bw*2, H*0.33, [r, r, 0, 0]); ctx.fill();
+      // "HELLO my name is" text
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `${W * 0.062}px -apple-system, sans-serif`;
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('hello, my name is', W/2, H * 0.115);
+      ctx.font = `bold ${W * 0.1}px -apple-system, sans-serif`;
+      ctx.fillText(label || 'HELLO!', W/2, H * 0.25);
+    },
+  },
+
   // ════════════════════════════════════════════════════════════
-  // SPORT (3 frames)
+  // SPORT (10 frames)
   // ════════════════════════════════════════════════════════════
 
   {
@@ -1114,8 +1708,213 @@ const FRAMES = [
     },
   },
 
+  {
+    id: 'sport-004',
+    name: 'Speed Lines',
+    category: 'sport',
+    tags: ['sport', 'speed', 'racing', 'fast'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'SCAN & RACE',
+    canvasRatio: 1 / 1.18,
+    qrArea: { x: 0.08, y: 0.08, w: 0.84, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      // Speed lines on left and right
+      const lines = 6;
+      for (let i = 0; i < lines; i++) {
+        const t = (i + 0.5) / lines;
+        const y = H * 0.1 + t * H * 0.7;
+        const len = W * (0.04 + Math.random() * 0.06);
+        ctx.strokeStyle = color + Math.floor(100 + i*25).toString(16);
+        ctx.lineWidth = W * (0.008 + i * 0.003);
+        ctx.lineCap = 'round';
+        // left lines
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(len, y); ctx.stroke();
+        // right lines
+        ctx.beginPath(); ctx.moveTo(W, y); ctx.lineTo(W - len, y); ctx.stroke();
+      }
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.016;
+      ctx.lineCap = 'butt';
+      drawRoundRect(ctx, W*0.005, H*0.005, W*0.99, H*0.91, W*0.03); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.945, W * 0.062, color);
+    },
+  },
+
+  {
+    id: 'sport-005',
+    name: 'Scoreboard',
+    category: 'sport',
+    tags: ['sport', 'scoreboard', 'stadium', 'game'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'SCAN TO SCORE',
+    canvasRatio: 1.3,
+    qrArea: { x: 0.04, y: 0.04, w: 0.5, h: 0.92 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.03, bw = W * 0.008;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      // Vertical divider
+      const divX = W * 0.56;
+      ctx.beginPath(); ctx.moveTo(divX, H*0.06); ctx.lineTo(divX, H*0.94); ctx.stroke();
+      // Score boxes on right
+      const boxH = H * 0.25, boxY = [H*0.1, H*0.38, H*0.66];
+      boxY.forEach((by, i) => {
+        ctx.fillStyle = i === 1 ? color : color + '22';
+        drawRoundRect(ctx, divX + W*0.04, by, W*0.32, boxH, W*0.015); ctx.fill();
+        ctx.fillStyle = i === 1 ? '#ffffff' : color;
+        ctx.font = `bold ${H * 0.14}px -apple-system, sans-serif`;
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(['1ST','2ND','3RD'][i], divX + W*0.04 + W*0.16, by + boxH/2);
+      });
+      if (label) labelInBanner(ctx, label, divX/2, H * 0.94, W * 0.038, color);
+    },
+  },
+
+  {
+    id: 'sport-006',
+    name: 'Lightning Bolt',
+    category: 'sport',
+    tags: ['sport', 'lightning', 'energy', 'power'],
+    featured: true, isNew: true, hasLabel: true,
+    defaultLabel: 'POWER UP',
+    canvasRatio: 1 / 1.2,
+    qrArea: { x: 0.08, y: 0.08, w: 0.84, h: 0.74 },
+    draw(ctx, W, H, color, label) {
+      // Lightning bolt corner marks
+      const bolt = (ctx, cx, cy, sz) => {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        ctx.moveTo(cx, cy - sz);
+        ctx.lineTo(cx - sz*0.3, cy);
+        ctx.lineTo(cx - sz*0.1, cy);
+        ctx.lineTo(cx - sz*0.4, cy + sz);
+        ctx.lineTo(cx + sz*0.4, cy - sz*0.1);
+        ctx.lineTo(cx + sz*0.1, cy - sz*0.1);
+        ctx.lineTo(cx + sz*0.3, cy - sz);
+        ctx.closePath(); ctx.fill();
+      };
+      const s = W * 0.06;
+      bolt(ctx, s, s, s); bolt(ctx, W-s, s, s);
+      bolt(ctx, s, H*0.84-s, s); bolt(ctx, W-s, H*0.84-s, s);
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.013;
+      drawRoundRect(ctx, W*0.03, H*0.03, W*0.94, H*0.78, W*0.02); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.915, W * 0.062, color);
+    },
+  },
+
+  {
+    id: 'sport-007',
+    name: 'Finish Line',
+    category: 'sport',
+    tags: ['sport', 'finish', 'race', 'checkered'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'SCAN TO FINISH',
+    canvasRatio: 1 / 1.18,
+    qrArea: { x: 0.05, y: 0.14, w: 0.9, h: 0.8 },
+    draw(ctx, W, H, color, label) {
+      // Checkered flag top banner
+      const cells = 10, cellW = W / cells, cellH = H * 0.11;
+      for (let c = 0; c < cells; c++) {
+        for (let r = 0; r < 2; r++) {
+          if ((c + r) % 2 === 0) {
+            ctx.fillStyle = color;
+            ctx.fillRect(c * cellW, r * cellH / 2, cellW, cellH / 2);
+          }
+        }
+      }
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.012;
+      drawRoundRect(ctx, W*0.006, H*0.12, W*0.988, H*0.868, W*0.03); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.065, W * 0.057, ctx._bgColor || '#ffffff');
+    },
+  },
+
+  {
+    id: 'sport-008',
+    name: 'Trophy Frame',
+    category: 'sport',
+    tags: ['sport', 'trophy', 'winner', 'champion', 'gold'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'SCAN TO WIN',
+    canvasRatio: 1 / 1.15,
+    qrArea: { x: 0.07, y: 0.07, w: 0.86, h: 0.75 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.03, bw = W * 0.013;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      // Trophy silhouette at bottom center
+      const ty = H * 0.84, ts = W * 0.08;
+      ctx.fillStyle = color;
+      // Cup body
+      ctx.beginPath();
+      ctx.moveTo(W/2 - ts, ty);
+      ctx.bezierCurveTo(W/2 - ts, ty + ts*2, W/2 + ts, ty + ts*2, W/2 + ts, ty);
+      ctx.closePath(); ctx.fill();
+      // Handle left
+      ctx.beginPath(); ctx.arc(W/2 - ts, ty + ts*0.8, ts*0.35, Math.PI*0.5, -Math.PI*0.5); ctx.stroke();
+      // Handle right
+      ctx.beginPath(); ctx.arc(W/2 + ts, ty + ts*0.8, ts*0.35, -Math.PI*0.5, Math.PI*0.5); ctx.stroke();
+      // Base
+      ctx.fillRect(W/2 - ts*0.6, ty + ts*2, ts*1.2, ts*0.35);
+      ctx.fillRect(W/2 - ts*0.9, ty + ts*2.3, ts*1.8, ts*0.25);
+      if (label) labelInBanner(ctx, label, W/2, H * 0.915, W * 0.057, color);
+    },
+  },
+
+  {
+    id: 'sport-009',
+    name: 'Dumbbell Frame',
+    category: 'sport',
+    tags: ['sport', 'fitness', 'gym', 'workout', 'dumbbell'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'GET FIT',
+    canvasRatio: 1 / 1.18,
+    qrArea: { x: 0.06, y: 0.06, w: 0.88, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.015;
+      drawRoundRect(ctx, W*0.005, H*0.005, W*0.99, H*0.88, W*0.04); ctx.stroke();
+      // Dumbbell icon at bottom
+      const dbY = H * 0.91, dbW = W * 0.36, dbH = H * 0.04;
+      ctx.fillStyle = color;
+      // Bar
+      ctx.fillRect(W/2 - dbW/2 + dbH, dbY, dbW - dbH*2, dbH*0.4);
+      // Left plates
+      drawRoundRect(ctx, W/2 - dbW/2, dbY - dbH*0.3, dbH, dbH*1.05, dbH*0.15); ctx.fill();
+      drawRoundRect(ctx, W/2 - dbW/2 + dbH*1.1, dbY - dbH*0.15, dbH*0.8, dbH*0.7, dbH*0.1); ctx.fill();
+      // Right plates
+      drawRoundRect(ctx, W/2 + dbW/2 - dbH, dbY - dbH*0.3, dbH, dbH*1.05, dbH*0.15); ctx.fill();
+      drawRoundRect(ctx, W/2 + dbW/2 - dbH*1.9, dbY - dbH*0.15, dbH*0.8, dbH*0.7, dbH*0.1); ctx.fill();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.93, W * 0.056, color);
+    },
+  },
+
+  {
+    id: 'sport-010',
+    name: 'Target Frame',
+    category: 'sport',
+    tags: ['sport', 'target', 'archery', 'aim', 'goal'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'HIT THE TARGET',
+    canvasRatio: 1,
+    qrArea: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 },
+    draw(ctx, W, H, color, label) {
+      // Concentric ring target around the QR area
+      const cx = W/2, cy = H/2;
+      [0.48, 0.42, 0.37].forEach((r, i) => {
+        ctx.strokeStyle = color + (i === 0 ? 'ff' : i === 1 ? 'aa' : '55');
+        ctx.lineWidth = W * (0.018 - i * 0.005);
+        ctx.beginPath(); ctx.arc(cx, cy, W*r, 0, Math.PI*2); ctx.stroke();
+      });
+      // Cross-hair lines
+      ctx.strokeStyle = color + '44'; ctx.lineWidth = W * 0.006;
+      ctx.setLineDash([W*0.03, W*0.02]);
+      ctx.beginPath(); ctx.moveTo(W*0.05, cy); ctx.lineTo(W*0.95, cy); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(cx, H*0.05); ctx.lineTo(cx, H*0.95); ctx.stroke();
+      ctx.setLineDash([]);
+      if (label) labelInBanner(ctx, label, W/2, H * 0.958, W * 0.055, color);
+    },
+  },
+
   // ════════════════════════════════════════════════════════════
-  // BADGE (3 frames)
+  // BADGE (10 frames)
   // ════════════════════════════════════════════════════════════
 
   {
@@ -1193,8 +1992,224 @@ const FRAMES = [
     },
   },
 
+  {
+    id: 'badge-004',
+    name: 'Star Badge',
+    category: 'badge',
+    tags: ['badge', 'star', 'award', 'gold'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'TOP RATED',
+    canvasRatio: 1,
+    qrArea: { x: 0.12, y: 0.12, w: 0.76, h: 0.72 },
+    draw(ctx, W, H, color, label) {
+      // 8-pointed star shape as outer border
+      const pts = 8, outer = W * 0.48, inner = W * 0.36;
+      ctx.fillStyle = color + '22';
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.016;
+      ctx.beginPath();
+      for (let i = 0; i < pts * 2; i++) {
+        const a = (i * Math.PI) / pts - Math.PI / 2;
+        const r = i % 2 === 0 ? outer : inner;
+        i === 0 ? ctx.moveTo(W/2 + r*Math.cos(a), H/2 + r*Math.sin(a))
+                : ctx.lineTo(W/2 + r*Math.cos(a), H/2 + r*Math.sin(a));
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.89, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'badge-005',
+    name: 'Crown Badge',
+    category: 'badge',
+    tags: ['badge', 'crown', 'premium', 'vip', 'king'],
+    featured: true, isNew: true, hasLabel: true,
+    defaultLabel: 'PREMIUM',
+    canvasRatio: 1 / 1.15,
+    qrArea: { x: 0.09, y: 0.2, w: 0.82, h: 0.72 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.04, bw = W * 0.012;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, H*0.16, W-bw, H*0.82, r); ctx.stroke();
+      // Crown at top
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(W*0.1, H*0.16);
+      ctx.lineTo(W*0.1, H*0.02);
+      ctx.lineTo(W*0.3, H*0.1);
+      ctx.lineTo(W*0.5, H*0.01);
+      ctx.lineTo(W*0.7, H*0.1);
+      ctx.lineTo(W*0.9, H*0.02);
+      ctx.lineTo(W*0.9, H*0.16);
+      ctx.closePath(); ctx.fill();
+      // Crown jewels
+      [[W*0.1, H*0.02],[W*0.5, H*0.01],[W*0.9, H*0.02]].forEach(([jx, jy]) => {
+        ctx.beginPath();
+        ctx.arc(jx, jy, W*0.025, 0, Math.PI*2);
+        ctx.fillStyle = ctx._bgColor || '#ffffff';
+        ctx.fill(); ctx.strokeStyle = color; ctx.lineWidth = bw*0.5; ctx.stroke();
+      });
+      if (label) labelInBanner(ctx, label, W/2, H * 0.915, W * 0.062, color);
+    },
+  },
+
+  {
+    id: 'badge-006',
+    name: 'Pentagon',
+    category: 'badge',
+    tags: ['badge', 'pentagon', 'security', 'official'],
+    featured: false, isNew: false, hasLabel: false,
+    canvasRatio: 1,
+    qrArea: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 },
+    draw(ctx, W, H, color) {
+      const pts = 5, cx = W/2, cy = H/2, r = W * 0.46;
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.02;
+      ctx.beginPath();
+      for (let i = 0; i < pts; i++) {
+        const a = (i / pts) * Math.PI * 2 - Math.PI / 2;
+        i === 0 ? ctx.moveTo(cx + r*Math.cos(a), cy + r*Math.sin(a))
+                : ctx.lineTo(cx + r*Math.cos(a), cy + r*Math.sin(a));
+      }
+      ctx.closePath(); ctx.stroke();
+      ctx.lineWidth = W * 0.008;
+      const ri = W * 0.39;
+      ctx.beginPath();
+      for (let i = 0; i < pts; i++) {
+        const a = (i / pts) * Math.PI * 2 - Math.PI / 2;
+        i === 0 ? ctx.moveTo(cx + ri*Math.cos(a), cy + ri*Math.sin(a))
+                : ctx.lineTo(cx + ri*Math.cos(a), cy + ri*Math.sin(a));
+      }
+      ctx.closePath(); ctx.stroke();
+    },
+  },
+
+  {
+    id: 'badge-007',
+    name: 'Ribbon Medal',
+    category: 'badge',
+    tags: ['badge', 'medal', 'ribbon', 'achievement'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'SCAN TO REDEEM',
+    canvasRatio: 0.75,
+    qrArea: { x: 0.07, y: 0.35, w: 0.86, h: 0.58 },
+    draw(ctx, W, H, color, label) {
+      // Ribbon tails at top
+      ctx.fillStyle = color;
+      // Left ribbon tail
+      ctx.beginPath();
+      ctx.moveTo(W*0.25, 0); ctx.lineTo(W*0.48, 0);
+      ctx.lineTo(W*0.48, H*0.32);
+      ctx.lineTo(W*0.37, H*0.25);
+      ctx.lineTo(W*0.25, H*0.32);
+      ctx.closePath(); ctx.fill();
+      // Right ribbon tail
+      ctx.beginPath();
+      ctx.moveTo(W*0.52, 0); ctx.lineTo(W*0.75, 0);
+      ctx.lineTo(W*0.75, H*0.32);
+      ctx.lineTo(W*0.63, H*0.25);
+      ctx.lineTo(W*0.52, H*0.32);
+      ctx.closePath(); ctx.fill();
+      // Medal circle
+      ctx.strokeStyle = color; ctx.lineWidth = W*0.022;
+      ctx.beginPath(); ctx.arc(W/2, H*0.6, W*0.42, 0, Math.PI*2); ctx.stroke();
+      ctx.lineWidth = W*0.009;
+      ctx.beginPath(); ctx.arc(W/2, H*0.6, W*0.36, 0, Math.PI*2); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.61, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'badge-008',
+    name: 'Diamond Badge',
+    category: 'badge',
+    tags: ['badge', 'diamond', 'premium', 'luxury', 'gem'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'DIAMOND TIER',
+    canvasRatio: 1,
+    qrArea: { x: 0.1, y: 0.1, w: 0.8, h: 0.8 },
+    draw(ctx, W, H, color, label) {
+      // Diamond (rhombus) outer shape
+      const cx = W/2, cy = H*0.5;
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.02;
+      ctx.beginPath();
+      ctx.moveTo(cx, H*0.025);
+      ctx.lineTo(W*0.975, cy);
+      ctx.lineTo(cx, H*0.975);
+      ctx.lineTo(W*0.025, cy);
+      ctx.closePath(); ctx.stroke();
+      // Inner diamond
+      ctx.lineWidth = W * 0.008;
+      ctx.beginPath();
+      ctx.moveTo(cx, H*0.08);
+      ctx.lineTo(W*0.92, cy);
+      ctx.lineTo(cx, H*0.92);
+      ctx.lineTo(W*0.08, cy);
+      ctx.closePath(); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.955, W * 0.056, color);
+    },
+  },
+
+  {
+    id: 'badge-009',
+    name: 'Emblem Frame',
+    category: 'badge',
+    tags: ['badge', 'emblem', 'crest', 'official', 'seal'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'OFFICIAL SEAL',
+    canvasRatio: 1 / 1.1,
+    qrArea: { x: 0.1, y: 0.08, w: 0.8, h: 0.72 },
+    draw(ctx, W, H, color, label) {
+      // Crest shape: straight top sides tapering to point at bottom
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.018;
+      ctx.beginPath();
+      ctx.moveTo(W*0.08, H*0.04);
+      ctx.lineTo(W*0.92, H*0.04);
+      ctx.lineTo(W*0.92, H*0.68);
+      ctx.quadraticCurveTo(W*0.92, H*0.88, W/2, H*0.98);
+      ctx.quadraticCurveTo(W*0.08, H*0.88, W*0.08, H*0.68);
+      ctx.closePath(); ctx.stroke();
+      // Inner crest
+      ctx.lineWidth = W * 0.007;
+      ctx.beginPath();
+      ctx.moveTo(W*0.14, H*0.08);
+      ctx.lineTo(W*0.86, H*0.08);
+      ctx.lineTo(W*0.86, H*0.65);
+      ctx.quadraticCurveTo(W*0.86, H*0.82, W/2, H*0.91);
+      ctx.quadraticCurveTo(W*0.14, H*0.82, W*0.14, H*0.65);
+      ctx.closePath(); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.785, W * 0.056, color);
+    },
+  },
+
+  {
+    id: 'badge-010',
+    name: 'Burst Badge',
+    category: 'badge',
+    tags: ['badge', 'burst', 'sale', 'promo', 'attention'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'HOT DEAL',
+    canvasRatio: 1,
+    qrArea: { x: 0.15, y: 0.15, w: 0.7, h: 0.7 },
+    draw(ctx, W, H, color, label) {
+      // Starburst / badge shape with many points
+      const pts = 16, outer = W * 0.48, inner = W * 0.38;
+      ctx.fillStyle = color + '22';
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.016;
+      ctx.beginPath();
+      for (let i = 0; i < pts * 2; i++) {
+        const a = (i * Math.PI) / pts - Math.PI / 2;
+        const r = i % 2 === 0 ? outer : inner;
+        i === 0
+          ? ctx.moveTo(W/2 + r*Math.cos(a), H/2 + r*Math.sin(a))
+          : ctx.lineTo(W/2 + r*Math.cos(a), H/2 + r*Math.sin(a));
+      }
+      ctx.closePath(); ctx.fill(); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.956, W * 0.056, color);
+    },
+  },
+
   // ════════════════════════════════════════════════════════════
-  // SOCIAL (3 frames)
+  // SOCIAL (10 frames)
   // ════════════════════════════════════════════════════════════
 
   {
@@ -1266,8 +2281,212 @@ const FRAMES = [
     },
   },
 
+  {
+    id: 'social-004',
+    name: 'Chat Bubble',
+    category: 'social',
+    tags: ['social', 'chat', 'message', 'conversation'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'CHAT WITH US',
+    canvasRatio: 1 / 1.15,
+    qrArea: { x: 0.06, y: 0.06, w: 0.88, h: 0.76 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.1, bw = W * 0.014;
+      // Chat bubble border
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      ctx.beginPath();
+      ctx.moveTo(W*0.05+r, H*0.04);
+      ctx.arcTo(W*0.05, H*0.04, W*0.05, H*0.04+r, r);
+      ctx.lineTo(W*0.05, H*0.84-r);
+      ctx.arcTo(W*0.05, H*0.84, W*0.05+r, H*0.84, r);
+      ctx.lineTo(W*0.25, H*0.84);
+      ctx.lineTo(W*0.18, H*0.96);
+      ctx.lineTo(W*0.38, H*0.84);
+      ctx.lineTo(W*0.95-r, H*0.84);
+      ctx.arcTo(W*0.95, H*0.84, W*0.95, H*0.84-r, r);
+      ctx.lineTo(W*0.95, H*0.04+r);
+      ctx.arcTo(W*0.95, H*0.04, W*0.95-r, H*0.04, r);
+      ctx.closePath();
+      ctx.stroke();
+      if (label) labelInBanner(ctx, label, W*0.5, H * 0.92, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'social-005',
+    name: 'QR Card',
+    category: 'social',
+    tags: ['social', 'card', 'share', 'profile'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'SHARE PROFILE',
+    canvasRatio: 1 / 1.3,
+    qrArea: { x: 0.07, y: 0.07, w: 0.86, h: 0.68 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.06, bw = W * 0.012;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      // Bottom bio strip
+      const stripY = H * 0.78;
+      ctx.fillStyle = color + '18';
+      drawRoundRect(ctx, bw, stripY, W-bw*2, H-stripY-bw, [0,0,r,r]); ctx.fill();
+      // Profile circle placeholder
+      const pr = W * 0.08;
+      ctx.strokeStyle = color; ctx.lineWidth = bw * 0.8;
+      ctx.beginPath(); ctx.arc(W * 0.15, stripY + (H-stripY)/2, pr, 0, Math.PI*2); ctx.stroke();
+      ctx.fillStyle = color + '33';
+      ctx.beginPath(); ctx.arc(W * 0.15, stripY + (H-stripY)/2, pr, 0, Math.PI*2); ctx.fill();
+      if (label) labelInBanner(ctx, label, W*0.6, stripY + (H-stripY)/2, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'social-006',
+    name: 'Wave Banner',
+    category: 'social',
+    tags: ['social', 'wave', 'banner', 'gradient'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'CONNECT',
+    canvasRatio: 1 / 1.22,
+    qrArea: { x: 0.05, y: 0.04, w: 0.9, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const bh = H * 0.18, by = H * 0.82;
+      // Wave bottom
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.moveTo(0, by + bh*0.3);
+      ctx.quadraticCurveTo(W*0.25, by - bh*0.2, W*0.5, by + bh*0.15);
+      ctx.quadraticCurveTo(W*0.75, by + bh*0.5, W, by + bh*0.1);
+      ctx.lineTo(W, H); ctx.lineTo(0, H);
+      ctx.closePath(); ctx.fill();
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.012;
+      drawRoundRect(ctx, W*0.006, H*0.006, W*0.988, H*0.988, W*0.04); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, by + bh*0.6, W * 0.065, '#ffffff');
+    },
+  },
+
+  {
+    id: 'social-007',
+    name: 'Hashtag Frame',
+    category: 'social',
+    tags: ['social', 'hashtag', 'twitter', 'trend'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: '#SCANME',
+    canvasRatio: 1,
+    qrArea: { x: 0.12, y: 0.12, w: 0.76, h: 0.76 },
+    draw(ctx, W, H, color, label) {
+      // Hashtag # symbol as background decoration
+      ctx.strokeStyle = color + '22'; ctx.lineWidth = W * 0.04;
+      ctx.lineCap = 'round';
+      // Vertical lines
+      ctx.beginPath(); ctx.moveTo(W*0.38, H*0.03); ctx.lineTo(W*0.3, H*0.97); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W*0.62, H*0.03); ctx.lineTo(W*0.54, H*0.97); ctx.stroke();
+      // Horizontal lines
+      ctx.beginPath(); ctx.moveTo(W*0.06, H*0.38); ctx.lineTo(W*0.94, H*0.38); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W*0.06, H*0.62); ctx.lineTo(W*0.94, H*0.62); ctx.stroke();
+      ctx.lineCap = 'butt';
+      // Overlay border
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.014;
+      drawRoundRect(ctx, W*0.04, H*0.04, W*0.92, H*0.92, W*0.04); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.955, W * 0.065, color);
+    },
+  },
+
+  {
+    id: 'social-008',
+    name: 'Podcast Frame',
+    category: 'social',
+    tags: ['social', 'podcast', 'audio', 'microphone', 'listen'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'LISTEN NOW',
+    canvasRatio: 1 / 1.2,
+    qrArea: { x: 0.06, y: 0.06, w: 0.88, h: 0.76 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.04, bw = W * 0.012;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      // Sound wave bars at bottom
+      const bars = [0.3, 0.6, 1.0, 0.7, 0.4, 0.8, 0.5, 0.9, 0.4, 0.6, 0.3];
+      const barW = W * 0.04, gap = W * 0.018;
+      const totalW = bars.length * (barW + gap) - gap;
+      const startX = (W - totalW) / 2;
+      const barMaxH = H * 0.07, barBaseY = H * 0.875;
+      ctx.fillStyle = color;
+      bars.forEach((h, i) => {
+        const bh = barMaxH * h;
+        drawRoundRect(ctx, startX + i*(barW+gap), barBaseY - bh, barW, bh*2, barW*0.4);
+        ctx.fill();
+      });
+      if (label) labelInBanner(ctx, label, W/2, H * 0.945, W * 0.056, color);
+    },
+  },
+
+  {
+    id: 'social-009',
+    name: 'Location Pin',
+    category: 'social',
+    tags: ['social', 'location', 'map', 'pin', 'place'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'FIND US HERE',
+    canvasRatio: 1 / 1.3,
+    qrArea: { x: 0.06, y: 0.22, w: 0.88, h: 0.7 },
+    draw(ctx, W, H, color, label) {
+      const bw = W * 0.012, r = W * 0.04;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, H*0.18, W-bw, H*0.8, [0, 0, r, r]); ctx.stroke();
+      // Pin shape at top
+      const pinR = W * 0.13, pinCy = H * 0.14;
+      ctx.fillStyle = color;
+      ctx.beginPath();
+      ctx.arc(W/2, pinCy, pinR, 0, Math.PI*2); ctx.fill();
+      // Pin tail
+      ctx.beginPath();
+      ctx.moveTo(W/2 - pinR*0.5, pinCy + pinR*0.6);
+      ctx.lineTo(W/2, H * 0.2);
+      ctx.lineTo(W/2 + pinR*0.5, pinCy + pinR*0.6);
+      ctx.closePath(); ctx.fill();
+      // Dot inside pin
+      ctx.fillStyle = ctx._bgColor || '#ffffff';
+      ctx.beginPath(); ctx.arc(W/2, pinCy, pinR*0.42, 0, Math.PI*2); ctx.fill();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.94, W * 0.057, color);
+    },
+  },
+
+  {
+    id: 'social-010',
+    name: 'Subscribe Frame',
+    category: 'social',
+    tags: ['social', 'subscribe', 'youtube', 'channel', 'follow'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'SUBSCRIBE NOW',
+    canvasRatio: 1 / 1.22,
+    qrArea: { x: 0.05, y: 0.04, w: 0.9, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const bh = H * 0.18, by = H * 0.82, r = W * 0.05, bw = W * 0.012;
+      // Outer border
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      // Solid bottom banner (pill-style)
+      ctx.fillStyle = color;
+      drawRoundRect(ctx, bw, by, W-bw*2, H-by-bw, [0, 0, r, r]); ctx.fill();
+      // Play button triangle inside banner
+      const px = W * 0.2, py = by + bh/2;
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.moveTo(px, py - bh*0.28);
+      ctx.lineTo(px + bh*0.32, py);
+      ctx.lineTo(px, py + bh*0.28);
+      ctx.closePath(); ctx.fill();
+      // Label beside play icon
+      ctx.fillStyle = '#ffffff';
+      ctx.font = `bold ${W * 0.065}px -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif`;
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillText(label || 'SUBSCRIBE NOW', W * 0.32, by + bh/2);
+    },
+  },
+
   // ════════════════════════════════════════════════════════════
-  // SEASONAL (1 frame, placeholder for growth)
+  // SEASONAL (10 frames)
   // ════════════════════════════════════════════════════════════
 
   {
@@ -1292,6 +2511,294 @@ const FRAMES = [
       }
       // label at bottom
       labelInBanner(ctx, label || 'HAPPY HOLIDAYS', W/2, H * 0.92, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'seasonal-002',
+    name: 'Spring Blossom',
+    category: 'seasonal',
+    tags: ['seasonal', 'spring', 'flower', 'blossom'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'HAPPY SPRING',
+    canvasRatio: 1,
+    qrArea: { x: 0.08, y: 0.08, w: 0.84, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const drawFlower = (cx, cy, r) => {
+        for (let i = 0; i < 5; i++) {
+          const a = (i / 5) * Math.PI * 2;
+          ctx.fillStyle = color + 'bb';
+          ctx.beginPath();
+          ctx.ellipse(cx + Math.cos(a)*r*1.2, cy + Math.sin(a)*r*1.2, r*0.6, r*0.9, a, 0, Math.PI*2);
+          ctx.fill();
+        }
+        ctx.fillStyle = ctx._bgColor || '#ffffff';
+        ctx.beginPath(); ctx.arc(cx, cy, r*0.5, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(cx, cy, r*0.3, 0, Math.PI*2); ctx.fill();
+      };
+      const s = W * 0.08;
+      drawFlower(s, s, s); drawFlower(W-s, s, s);
+      drawFlower(s, H*0.88, s); drawFlower(W-s, H*0.88, s);
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.01;
+      drawRoundRect(ctx, W*0.04, H*0.04, W*0.92, H*0.88, W*0.03); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.058, color);
+    },
+  },
+
+  {
+    id: 'seasonal-003',
+    name: 'Summer Sun',
+    category: 'seasonal',
+    tags: ['seasonal', 'summer', 'sun', 'beach'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'SUMMER VIBES',
+    canvasRatio: 1,
+    qrArea: { x: 0.09, y: 0.09, w: 0.82, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const rays = 12, cx = W/2, cy = H*0.5;
+      const innerR = W * 0.44, outerR = W * 0.5;
+      ctx.strokeStyle = color + '55'; ctx.lineWidth = W * 0.012;
+      ctx.lineCap = 'round';
+      for (let i = 0; i < rays; i++) {
+        const a = (i / rays) * Math.PI * 2;
+        ctx.beginPath();
+        ctx.moveTo(cx + Math.cos(a) * innerR, cy + Math.sin(a) * innerR);
+        ctx.lineTo(cx + Math.cos(a) * outerR, cy + Math.sin(a) * outerR);
+        ctx.stroke();
+      }
+      ctx.lineCap = 'butt';
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.013;
+      drawRoundRect(ctx, W*0.04, H*0.04, W*0.92, H*0.88, W*0.04); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.057, color);
+    },
+  },
+
+  {
+    id: 'seasonal-004',
+    name: 'Autumn Leaves',
+    category: 'seasonal',
+    tags: ['seasonal', 'autumn', 'fall', 'leaves'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'FALL SPECIAL',
+    canvasRatio: 1,
+    qrArea: { x: 0.08, y: 0.08, w: 0.84, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const drawLeaf = (cx, cy, sz, angle) => {
+        ctx.save();
+        ctx.translate(cx, cy); ctx.rotate(angle);
+        ctx.fillStyle = color + 'cc';
+        ctx.beginPath();
+        ctx.moveTo(0, -sz);
+        ctx.bezierCurveTo(sz, -sz, sz, sz*0.5, 0, sz);
+        ctx.bezierCurveTo(-sz, sz*0.5, -sz, -sz, 0, -sz);
+        ctx.fill();
+        ctx.strokeStyle = color; ctx.lineWidth = sz * 0.1;
+        ctx.beginPath(); ctx.moveTo(0, -sz); ctx.lineTo(0, sz); ctx.stroke();
+        ctx.restore();
+      };
+      const s = W * 0.065;
+      drawLeaf(s, s, s, 0.5); drawLeaf(W-s, s, s, -0.5);
+      drawLeaf(s, H*0.88, s, 0.8); drawLeaf(W-s, H*0.88, s, -0.8);
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.011;
+      drawRoundRect(ctx, W*0.04, H*0.04, W*0.92, H*0.87, W*0.03); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.057, color);
+    },
+  },
+
+  {
+    id: 'seasonal-005',
+    name: 'Winter Frost',
+    category: 'seasonal',
+    tags: ['seasonal', 'winter', 'frost', 'ice', 'snow'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'WINTER SPECIAL',
+    canvasRatio: 1,
+    qrArea: { x: 0.09, y: 0.09, w: 0.82, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const drawCrystal = (cx, cy, sz) => {
+        ctx.strokeStyle = color + 'aa'; ctx.lineWidth = sz * 0.12;
+        ctx.lineCap = 'round';
+        for (let i = 0; i < 6; i++) {
+          const a = (i / 6) * Math.PI * 2;
+          ctx.beginPath(); ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a)*sz, cy + Math.sin(a)*sz); ctx.stroke();
+          const mx = cx + Math.cos(a)*sz*0.6, my = cy + Math.sin(a)*sz*0.6;
+          for (let j = -1; j <= 1; j += 2) {
+            ctx.beginPath();
+            ctx.moveTo(mx, my);
+            ctx.lineTo(mx + Math.cos(a + j*Math.PI/3)*sz*0.25, my + Math.sin(a + j*Math.PI/3)*sz*0.25);
+            ctx.stroke();
+          }
+        }
+        ctx.lineCap = 'butt';
+      };
+      const s = W * 0.07;
+      drawCrystal(s, s, s); drawCrystal(W-s, s, s);
+      drawCrystal(s, H*0.88, s); drawCrystal(W-s, H*0.88, s);
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.011;
+      drawRoundRect(ctx, W*0.04, H*0.04, W*0.92, H*0.87, W*0.03); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.057, color);
+    },
+  },
+
+  {
+    id: 'seasonal-006',
+    name: 'New Year',
+    category: 'seasonal',
+    tags: ['seasonal', 'new year', 'fireworks', 'celebration'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'HAPPY NEW YEAR',
+    canvasRatio: 1,
+    qrArea: { x: 0.08, y: 0.08, w: 0.84, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const drawBurst = (cx, cy, r, pts) => {
+        ctx.lineCap = 'round';
+        for (let i = 0; i < pts; i++) {
+          const a = (i / pts) * Math.PI * 2;
+          ctx.strokeStyle = color + (i % 2 === 0 ? 'ff' : '88');
+          ctx.lineWidth = W * 0.006;
+          ctx.beginPath(); ctx.moveTo(cx, cy);
+          ctx.lineTo(cx + Math.cos(a)*r, cy + Math.sin(a)*r); ctx.stroke();
+        }
+        ctx.lineCap = 'butt';
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(cx, cy, r*0.12, 0, Math.PI*2); ctx.fill();
+      };
+      const s = W * 0.1;
+      drawBurst(s, s, s, 10); drawBurst(W-s, s, s, 10);
+      drawBurst(s, H*0.87, s, 8); drawBurst(W-s, H*0.87, s, 8);
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.012;
+      drawRoundRect(ctx, W*0.04, H*0.04, W*0.92, H*0.87, W*0.03); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.055, color);
+    },
+  },
+
+  {
+    id: 'seasonal-007',
+    name: 'Love Day',
+    category: 'seasonal',
+    tags: ['seasonal', 'valentine', 'love', 'heart', 'romance'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'WITH LOVE',
+    canvasRatio: 1,
+    qrArea: { x: 0.09, y: 0.09, w: 0.82, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const drawHeart = (cx, cy, sz) => {
+        ctx.fillStyle = color + 'cc';
+        ctx.beginPath();
+        ctx.moveTo(cx, cy + sz*0.4);
+        ctx.bezierCurveTo(cx - sz*1.2, cy - sz*0.4, cx - sz*2, cy + sz*0.8, cx, cy + sz*2);
+        ctx.bezierCurveTo(cx + sz*2, cy + sz*0.8, cx + sz*1.2, cy - sz*0.4, cx, cy + sz*0.4);
+        ctx.fill();
+      };
+      const heartPts = 16;
+      for (let i = 0; i < heartPts; i++) {
+        const t = i / heartPts;
+        let x, y;
+        if (t < 0.25)      { x = W*0.04 + (t/0.25)*W*0.92; y = H*0.04; }
+        else if (t < 0.5)  { x = W*0.96; y = H*0.04 + ((t-0.25)/0.25)*H*0.84; }
+        else if (t < 0.75) { x = W*0.96 - ((t-0.5)/0.25)*W*0.92; y = H*0.88; }
+        else               { x = W*0.04; y = H*0.88 - ((t-0.75)/0.25)*H*0.84; }
+        drawHeart(x, y, W * 0.018);
+      }
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.06, color);
+    },
+  },
+
+  {
+    id: 'seasonal-008',
+    name: 'Graduation',
+    category: 'seasonal',
+    tags: ['seasonal', 'graduation', 'education', 'diploma'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'SCAN TO CONNECT',
+    canvasRatio: 1 / 1.18,
+    qrArea: { x: 0.07, y: 0.07, w: 0.86, h: 0.76 },
+    draw(ctx, W, H, color, label) {
+      const r = W * 0.04, bw = W * 0.012;
+      ctx.strokeStyle = color; ctx.lineWidth = bw;
+      drawRoundRect(ctx, bw/2, bw/2, W-bw, H-bw, r); ctx.stroke();
+      ctx.fillStyle = color + '18';
+      drawRoundRect(ctx, bw, bw, W-bw*2, H*0.03, [r, r, 0, 0]); ctx.fill();
+      drawRoundRect(ctx, bw, H*0.84, W-bw*2, H*0.03, [0, 0, 0, 0]); ctx.fill();
+      // Graduation cap
+      ctx.fillStyle = color;
+      const capY = H * 0.89, capW = W * 0.18, capH = H * 0.025;
+      ctx.fillRect((W-capW)/2, capY, capW, capH);
+      ctx.beginPath();
+      ctx.moveTo(W/2, capY - H*0.03);
+      ctx.lineTo(W/2 - capW*0.7, capY);
+      ctx.lineTo(W/2 + capW*0.7, capY);
+      ctx.closePath(); ctx.fill();
+      if (label) labelInBanner(ctx, label, W/2, H*0.91, W * 0.057, '#ffffff');
+    },
+  },
+
+  {
+    id: 'seasonal-009',
+    name: 'Birthday',
+    category: 'seasonal',
+    tags: ['seasonal', 'birthday', 'celebration', 'party', 'cake'],
+    featured: false, isNew: true, hasLabel: true,
+    defaultLabel: 'HAPPY BIRTHDAY',
+    canvasRatio: 1,
+    qrArea: { x: 0.08, y: 0.08, w: 0.84, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const confetti = [
+        [0.07, 0.03], [0.2, 0.06], [0.5, 0.02], [0.75, 0.05], [0.93, 0.03],
+        [0.97, 0.2],  [0.96, 0.5], [0.97, 0.78],
+        [0.93, 0.95], [0.8, 0.97], [0.5, 0.96], [0.2, 0.97], [0.07, 0.95],
+        [0.03, 0.78], [0.04, 0.5], [0.03, 0.2],
+      ];
+      confetti.forEach(([fx, fy], i) => {
+        const sz = W * 0.018;
+        ctx.fillStyle = color + ['ff','cc','99','66'][i % 4];
+        if (i % 2 === 0) {
+          ctx.fillRect(W*fx - sz/2, H*fy - sz/2, sz, sz * 0.5);
+        } else {
+          ctx.beginPath(); ctx.arc(W*fx, H*fy, sz*0.5, 0, Math.PI*2); ctx.fill();
+        }
+      });
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.013;
+      drawRoundRect(ctx, W*0.04, H*0.04, W*0.92, H*0.87, W*0.04); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.055, color);
+    },
+  },
+
+  {
+    id: 'seasonal-010',
+    name: 'Ramadan',
+    category: 'seasonal',
+    tags: ['seasonal', 'ramadan', 'eid', 'crescent', 'moon'],
+    featured: false, isNew: false, hasLabel: true,
+    defaultLabel: 'RAMADAN MUBARAK',
+    canvasRatio: 1,
+    qrArea: { x: 0.09, y: 0.09, w: 0.82, h: 0.78 },
+    draw(ctx, W, H, color, label) {
+      const drawCrescent = (cx, cy, r) => {
+        ctx.fillStyle = color;
+        ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI*2); ctx.fill();
+        ctx.fillStyle = ctx._bgColor || '#ffffff';
+        ctx.beginPath(); ctx.arc(cx + r*0.35, cy - r*0.1, r*0.75, 0, Math.PI*2); ctx.fill();
+      };
+      const drawStar4 = (cx, cy, r) => {
+        ctx.fillStyle = color;
+        ctx.beginPath();
+        for (let i = 0; i < 8; i++) {
+          const a = (i * Math.PI) / 4 - Math.PI/8;
+          const rad = i % 2 === 0 ? r : r*0.45;
+          i === 0 ? ctx.moveTo(cx + rad*Math.cos(a), cy + rad*Math.sin(a))
+                  : ctx.lineTo(cx + rad*Math.cos(a), cy + rad*Math.sin(a));
+        }
+        ctx.closePath(); ctx.fill();
+      };
+      const s = W * 0.07;
+      drawCrescent(s, s, s); drawStar4(W-s, s, s*0.55);
+      drawStar4(s, H*0.87, s*0.5); drawCrescent(W-s, H*0.87, s);
+      ctx.strokeStyle = color; ctx.lineWidth = W * 0.012;
+      drawRoundRect(ctx, W*0.04, H*0.04, W*0.92, H*0.87, W*0.03); ctx.stroke();
+      if (label) labelInBanner(ctx, label, W/2, H * 0.935, W * 0.053, color);
     },
   },
 
